@@ -1,4 +1,4 @@
-# nhsmm-interfaces
+# Interfaces for NHSMM (Neural Hidden Semi-Markov Models)
 
 **Domain-oriented interface definitions and integration contracts for Neural Hidden Semi-Markov Models (NHSMM).**
 
@@ -12,8 +12,7 @@ It serves as the **contract layer** between the NHSMM core library and **multi-d
 - **Core Modeling & Inference**: [NHSMM](https://github.com/awa-si/NHSMM)  
 - **This Repository**: `nhsmm-interfaces` — domain-facing contracts and abstractions
 
-`nhsmm-interfaces` does not implement domain logic or probabilistic models.  
-It defines **stable boundaries** that allow domain systems to evolve independently of NHSMM internals.
+`nhsmm-interfaces` does not implement domain logic or probabilistic models. It defines **stable boundaries** that allow domain systems to evolve independently of NHSMM internals.
 
 ---
 
@@ -170,4 +169,4 @@ This allows SAE to scale horizontally across industries while maintaining a unif
 
 ## 📄 License
 
-Released under the **Apache License 2.0** © 2024 **AWA.SI**
+Released under the **Apache License 2.0** © 2025 **AWA.SI**

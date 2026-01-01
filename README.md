@@ -1,169 +1,91 @@
-# Interfaces for NHSMM (Neural Hidden Semi-Markov Models)
+# NHSMM Interfaces — Research & Early Access
 
 **Domain-oriented interface definitions and integration contracts for Neural Hidden Semi-Markov Models (NHSMM).**
 
-This repository provides **standardized interfaces** that enable **domain-specific systems** to integrate with **NHSMM-based models** in a consistent, modular, and scalable manner.  
+This repository provides **standardized interfaces** enabling **domain-specific systems** to integrate with **NHSMM-based models** in a consistent, modular, and scalable way.  
 It serves as the **contract layer** between the NHSMM core library and **multi-domain applications** within the **State Aware Engine (SAE)** ecosystem.
+
+> ⚠️ This repository is currently in **research preview / early access**. After initial showcase releases, it may become closed-access. Full access and research updates are available to Patreon supporters. See [Patreon Tier Details](#patreon-early-access).
 
 ---
 
-## 🔗 Relationship to NHSMM
+## 🔗 Relationship to NHSMM & SAE
 
-- **Core Modeling & Inference**: [NHSMM](https://github.com/awa-si/NHSMM)  
-- **This Repository**: `nhsmm-interfaces` — domain-facing contracts and abstractions
+- **Core Modeling & Inference**: [NHSMM](https://github.com/awa-si/NHSMM) — fully open-source and actively developed  
+- **Interfaces / Contract Layer**: `nhsmm-interfaces` — early access for research, experimentation, and SAE preparation  
+- **SAE**: Planned commercial/research product using `nhsmm-interfaces` as the foundation
 
-`nhsmm-interfaces` does not implement domain logic or probabilistic models. It defines **stable boundaries** that allow domain systems to evolve independently of NHSMM internals.
+`nhsmm-interfaces` **does not implement domain logic**; it defines **stable boundaries** allowing domain systems to evolve independently of NHSMM internals.
 
 ---
 
 ## 🎯 Design Intent
 
-- Align NHSMM integration with **real-world, multi-domain use cases**
-- Decouple **domain semantics** from **latent-state modeling**
-- Enable **consistent state-aware behavior** across heterogeneous systems
-- Support research, production, cloud, on-prem, and edge deployments
+- Align NHSMM integration with **real-world, multi-domain use cases**  
+- Decouple **domain semantics** from **latent-state modeling**  
+- Enable **consistent state-aware behavior** across heterogeneous systems  
+- Support research, production, cloud, on-prem, and edge deployments  
+- Offer early access to **researchers and subscribers** via Patreon
 
 ---
 
 ## 🌐 Interface Groups (Multi-Domain Aligned)
 
-### 1. Security & Cyber-Physical Systems Interfaces
+### 1. Security & Cyber-Physical Systems
+- **Focus**: Latent operational or threat states, anomaly signaling, real-time inference  
+- **Scope**: Event emission contracts, streaming/log-based adapters
 
-Interfaces for **state-aware monitoring, anomaly detection, and event-driven systems**.
+### 2. Finance & Trading
+- **Focus**: Market regime detection, time-varying strategies, portfolio states  
+- **Scope**: Market data adapters, regime output contracts
 
-**Focus**
-- Latent operational or threat states
-- Temporal anomaly signaling
-- Real-time or near-real-time inference
+### 3. IoT & Industrial Systems
+- **Focus**: Sensor-driven operational states, predictive maintenance  
+- **Scope**: Sensor sequence containers, dwell-time reporting
 
-**Interface Scope**
-- State event emission contracts
-- Anomaly and regime-change signaling
-- Streaming and log-based sequence adapters
+### 4. Health & Wearables
+- **Focus**: Latent activity/health states, multimodal time-series  
+- **Scope**: Wearable adapters, patient-centric state outputs
 
----
+### 5. Robotics & Motion Analytics
+- **Focus**: Robot/agent behavior states, temporal task segmentation  
+- **Scope**: Motion sequence adapters, control-system boundaries
 
-### 2. Finance & Trading Interfaces
+### 6. Telecommunications & Network Analytics
+- **Focus**: Network traffic regimes, anomaly detection  
+- **Scope**: Flow sequence adapters, scalable batch/streaming interfaces
 
-Interfaces for **market regime modeling and adaptive financial systems**.
+### 7. Energy & Smart Grid
+- **Focus**: Load/failure regimes, long-horizon dependencies  
+- **Scope**: Grid telemetry adapters, transition reporting
 
-**Focus**
-- Regime detection and transition tracking
-- Time-varying risk or strategy states
-- Portfolio- or asset-level sequence abstraction
-
-**Interface Scope**
-- Time-series market data adapters
-- Regime state output contracts
-- Strategy-aware state transition hooks
-
----
-
-### 3. IoT & Industrial Systems Interfaces
-
-Interfaces for **sensor-driven and machine-state modeling**.
-
-**Focus**
-- Equipment operational states
-- Predictive maintenance regimes
-- Multi-sensor temporal fusion
-
-**Interface Scope**
-- Sensor sequence containers
-- State persistence and dwell-time reporting
-- Edge-friendly inference boundaries
+### 8. Cross-Domain Research & AI
+- **Focus**: Experimental HSMM/HMM variants, multi-domain abstraction  
+- **Scope**: Generic sequence containers, posterior access, evaluation hooks
 
 ---
 
-### 4. Health & Wearables Interfaces
+## 🧩 Role in SAE
 
-Interfaces for **physiological and activity-based state modeling**.
-
-**Focus**
-- Latent activity or health states
-- Personalized temporal patterns
-- Multimodal, noisy time-series data
-
-**Interface Scope**
-- Wearable and biosignal adapters
-- Patient- or user-centric state outputs
-- Privacy-aware data exchange contracts
-
----
-
-### 5. Robotics & Motion Analytics Interfaces
-
-Interfaces for **behavioral and motion-state tracking**.
-
-**Focus**
-- Robot or agent behavior states
-- Safe transition detection
-- Temporal task segmentation
-
-**Interface Scope**
-- Telemetry and motion sequence adapters
-- State transition alerts
-- Control-system integration boundaries
-
----
-
-### 6. Telecommunications & Network Analytics Interfaces
-
-Interfaces for **network-level temporal state analysis**.
-
-**Focus**
-- Latent congestion or traffic regimes
-- Temporal anomaly detection
-- High-throughput sequential data
-
-**Interface Scope**
-- Network flow sequence adapters
-- Regime-change signaling
-- Scalable batch and streaming interfaces
-
----
-
-### 7. Energy & Smart Grid Interfaces
-
-Interfaces for **state-aware energy system monitoring**.
-
-**Focus**
-- Load, failure, or stability regimes
-- Long-horizon temporal dependencies
-- Infrastructure-scale sequences
-
-**Interface Scope**
-- Grid telemetry adapters
-- State persistence and transition reporting
-- Planning and optimization hooks
-
----
-
-### 8. Cross-Domain Research & AI Interfaces
-
-Interfaces for **experimental and hybrid sequence modeling**.
-
-**Focus**
-- Novel HSMM/HMM variants
-- Research-driven extensions
-- Multi-domain abstraction reuse
-
-**Interface Scope**
-- Generic sequence containers
-- Inference and posterior access contracts
-- Experimentation and evaluation hooks
-
----
-
-## 🧩 Role in the State Aware Engine (SAE)
-
-Within SAE, `nhsmm-interfaces` enables:
+`nhsmm-interfaces` enables:
 
 - **Consistent state semantics** across domains  
 - **Pluggable adapters** without modifying NHSMM core  
-- **Clean separation** between probabilistic modeling and application logic  
+- **Clean separation** of probabilistic modeling and application logic  
 
-This allows SAE to scale horizontally across industries while maintaining a unified temporal modeling foundation.
+This allows SAE to scale horizontally across industries while maintaining a **unified temporal modeling foundation**.
+
+---
+
+## 💡 Patreon Early Access
+
+Support the research and early interface development on **Patreon**:
+
+- **Research Preview Tier**: Download per-release snapshots, access research sketches  
+- **Insider Tier**: Unlimited interface access, architectural insights, priority discussions  
+- **SAE Founders Tier**: Early SAE product access and roadmap influence  
+
+> Supporting Patreon helps fund ongoing NHSMM research and accelerates SAE development.
 
 ---
 

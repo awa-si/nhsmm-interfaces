@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from adapters import NHSMMRuntimeAdapter, Observation
@@ -40,7 +41,7 @@ def test_nhsmm_runtime_adapter_maps_public_filter_state(monkeypatch):
     )
 
     assert result.state == 1
-    assert result.posterior == (0.3, 0.7)
-    assert result.age_posterior == (0.15, 0.35, 0.5)
+    assert result.posterior == pytest.approx((0.3, 0.7))
+    assert result.age_posterior == pytest.approx((0.15, 0.35, 0.5))
     assert result.timestamp == 123
     assert result.metadata["instrument"] == "BTCUSDT"

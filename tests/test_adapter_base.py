@@ -18,15 +18,19 @@ class DemoAdapter(UniversalAdapter):
         return StateEstimate(
             state=2,
             posterior=(0.1, 0.2, 0.7),
+            age_posterior=(0.05, 0.15, 0.3, 0.5),
             timestamp=observation.timestamp,
-            duration=4,
         )
 
     def from_state(self, state):
         return {
             "state": state.state,
             "confidence": max(state.posterior),
-            "duration": state.duration,
+            "age_mode": max(
+                range(len(state.age_posterior)),
+                key=state.age_posterior.__getitem__,
+            )
+            + 1,
         }
 
 
@@ -42,4 +46,4 @@ def test_universal_adapter_step_pipeline():
         }
     )
 
-    assert result == {"state": 2, "confidence": 0.7, "duration": 4}
+    assert result == {"state": 2, "confidence": 0.7, "age_mode": 4}

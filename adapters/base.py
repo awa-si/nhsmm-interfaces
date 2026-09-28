@@ -25,12 +25,12 @@ class Context:
 
 @dataclass(frozen=True)
 class StateEstimate:
-    """Engine-neutral representation of an NHSMM inference result."""
+    """Engine-neutral representation of one NHSMM filtering result."""
 
     state: int | None
     posterior: Sequence[float]
+    age_posterior: Sequence[float] | None = None
     timestamp: Any | None = None
-    duration: int | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 

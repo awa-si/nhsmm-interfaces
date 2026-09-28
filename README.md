@@ -16,10 +16,46 @@ Conceptually:
 ```text
 domain system
     |
-nhsmm-interfaces
+engine binding
     |
-nhsmm core
+UniversalAdapter
+    |
+nhsmm core/runtime
 ```
+
+## Universal adapter contract
+
+`adapters.UniversalAdapter` is the common integration boundary for host frameworks such as Nautilus Trader, Freqtrade, or other event-driven/batch systems.
+
+The canonical pipeline is:
+
+```text
+host event
+  -> to_observation(event)
+  -> to_context(event)
+  -> infer(observation, context)
+  -> from_state(state)
+  -> host-facing result
+```
+
+Canonical data contracts:
+
+- `Observation`: model feature values plus optional timestamp, instrument, and metadata;
+- `Context`: optional model context values plus metadata;
+- `StateEstimate`: latent state, posterior probabilities, optional duration, timestamp, and metadata;
+- `UniversalAdapter`: orchestration contract connecting those types.
+
+Concrete engine adapters should be thin translations around this contract. They should not contain strategy rules, signal generation, portfolio policy, execution logic, or risk policy.
+
+Examples of engine-specific bindings that can implement this contract:
+
+```text
+NautilusAdapter   -> UniversalAdapter
+FreqtradeAdapter  -> UniversalAdapter
+OtherAdapter      -> UniversalAdapter
+```
+
+The engine binding owns host-object conversion and lifecycle integration. NHSMM model semantics remain in the core package.
 
 ## Scope
 

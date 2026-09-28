@@ -18,44 +18,41 @@ domain system
     |
 engine binding
     |
-UniversalAdapter
+UniversalAdapter / NHSMMRuntimeAdapter
     |
 nhsmm core/runtime
 ```
 
-## Universal adapter contract
+## Adapters
 
-`adapters.UniversalAdapter` is the common integration boundary for host frameworks such as Nautilus Trader, Freqtrade, or other event-driven/batch systems.
+The adapter layer provides a common integration boundary for host frameworks such as Nautilus Trader, Freqtrade, and other event-driven or batch systems.
 
-The canonical pipeline is:
+The canonical streaming path is:
 
 ```text
 host event
   -> to_observation(event)
   -> to_context(event)
-  -> infer(observation, context)
+  -> NHSMMRuntimeAdapter.infer(...)
+  -> nhsmm.HSMMFilterRuntime
+  -> StateEstimate
   -> from_state(state)
   -> host-facing result
 ```
 
-Canonical data contracts:
+Public contracts:
 
-- `Observation`: model feature values plus optional timestamp, instrument, and metadata;
-- `Context`: optional model context values plus metadata;
-- `StateEstimate`: latent state, posterior probabilities, optional duration, timestamp, and metadata;
-- `UniversalAdapter`: orchestration contract connecting those types.
+- `Observation`: ordered model feature values plus optional timestamp, instrument, and metadata;
+- `Context`: optional external model-context values plus metadata;
+- `StateEstimate`: most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata;
+- `UniversalAdapter`: engine-neutral orchestration contract;
+- `NHSMMRuntimeAdapter`: bridge from the canonical contracts to the public NHSMM streaming runtime.
 
-Concrete engine adapters should be thin translations around this contract. They should not contain strategy rules, signal generation, portfolio policy, execution logic, or risk policy.
+Concrete framework adapters should normally subclass `NHSMMRuntimeAdapter` and implement only host-specific translation such as `to_observation()` and, when external context is used, `to_context()`.
 
-Examples of engine-specific bindings that can implement this contract:
+They should not contain strategy rules, signal generation, portfolio policy, execution logic, or risk policy.
 
-```text
-NautilusAdapter   -> UniversalAdapter
-FreqtradeAdapter  -> UniversalAdapter
-OtherAdapter      -> UniversalAdapter
-```
-
-The engine binding owns host-object conversion and lifecycle integration. NHSMM model semantics remain in the core package.
+See **[`docs/adapters.md`](docs/adapters.md)** for the full adapter architecture, lifecycle rules, minimal usage example, internal/external context handling, and guidance for Nautilus/Freqtrade integrations.
 
 ## Scope
 
@@ -116,6 +113,10 @@ In particular:
 - Domain policy and application decisions belong in downstream systems.
 - Interfaces should expose only the model information required by downstream consumers.
 - Domain-specific adapters should not change NHSMM core semantics.
+
+## Documentation
+
+- [`docs/adapters.md`](docs/adapters.md) — adapter architecture and usage
 
 ## Status
 

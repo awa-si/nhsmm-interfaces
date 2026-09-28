@@ -1,94 +1,90 @@
-# NHSMM Interfaces — Research & Early Access
+# NHSMM Interfaces
 
-**Domain-oriented interface definitions and integration contracts for Neural Hidden Semi-Markov Models (NHSMM).**
+Domain-oriented interface definitions and integration contracts for Neural Hidden Semi-Markov Models (NHSMM).
 
-This repository provides **standardized interfaces** enabling **domain-specific systems** to integrate with **NHSMM-based models** in a consistent, modular, and scalable way.  
-It serves as the **contract layer** between the NHSMM core library and **multi-domain applications** within the **State Aware Engine (SAE)** ecosystem.
+This repository contains interface and adapter contracts intended to separate domain-specific integration code from the NHSMM core package.
 
-> ⚠️ This repository is currently in **research preview / early access**. After initial showcase releases, it may become closed-access. Full access and research updates are available to Patreon supporters. See [Patreon Tier Details](#patreon-early-access).
+## Relationship to NHSMM
 
----
+- **Core modeling and inference:** [awa-si/nhsmm](https://github.com/awa-si/nhsmm)
+- **Integration contracts:** `nhsmm-interfaces`
 
-## 🔗 Relationship to NHSMM & SAE
+`nhsmm-interfaces` does not implement the NHSMM model itself and does not define domain-specific decision logic. It provides boundaries, data contracts, and adapter-oriented interfaces for systems that integrate with NHSMM outputs or inputs.
 
-- **Core Modeling & Inference**: [NHSMM](https://github.com/awa-si/NHSMM) — fully open-source and actively developed  
-- **Interfaces / Contract Layer**: `nhsmm-interfaces` — early access for research, experimentation, and SAE preparation  
-- **SAE**: Planned commercial/research product using `nhsmm-interfaces` as the foundation
+Conceptually:
 
-`nhsmm-interfaces` **does not implement domain logic**; it defines **stable boundaries** allowing domain systems to evolve independently of NHSMM internals.
+```text
+domain system
+    |
+nhsmm-interfaces
+    |
+nhsmm core
+```
 
----
+## Scope
 
-## 🎯 Design Intent
+The repository is intended to cover contracts such as:
 
-- Align NHSMM integration with **real-world, multi-domain use cases**  
-- Decouple **domain semantics** from **latent-state modeling**  
-- Enable **consistent state-aware behavior** across heterogeneous systems  
-- Support research, production, cloud, on-prem, and edge deployments  
-- Offer early access to **researchers and subscribers** via Patreon
+- sequence and observation inputs;
+- context and metadata inputs;
+- latent-state and posterior outputs;
+- duration and transition reporting;
+- batch and streaming adapter boundaries;
+- domain-facing normalization of NHSMM results.
 
----
+The interface layer is kept separate from the probabilistic model so that integration code does not depend directly on NHSMM internals where a narrower contract is sufficient.
 
-## 🌐 Interface Groups (Multi-Domain Aligned)
+## Interface groups
 
-### 1. Security & Cyber-Physical Systems
-- **Focus**: Latent operational or threat states, anomaly signaling, real-time inference  
-- **Scope**: Event emission contracts, streaming/log-based adapters
+Current domain groupings include:
 
-### 2. Finance & Trading
-- **Focus**: Market regime detection, time-varying strategies, portfolio states  
-- **Scope**: Market data adapters, regime output contracts
+### Security and cyber-physical systems
 
-### 3. IoT & Industrial Systems
-- **Focus**: Sensor-driven operational states, predictive maintenance  
-- **Scope**: Sensor sequence containers, dwell-time reporting
+Event, telemetry, streaming, and state-output contracts.
 
-### 4. Health & Wearables
-- **Focus**: Latent activity/health states, multimodal time-series  
-- **Scope**: Wearable adapters, patient-centric state outputs
+### Finance and trading
 
-### 5. Robotics & Motion Analytics
-- **Focus**: Robot/agent behavior states, temporal task segmentation  
-- **Scope**: Motion sequence adapters, control-system boundaries
+Market-data inputs and regime/state output contracts.
 
-### 6. Telecommunications & Network Analytics
-- **Focus**: Network traffic regimes, anomaly detection  
-- **Scope**: Flow sequence adapters, scalable batch/streaming interfaces
+### IoT and industrial systems
 
-### 7. Energy & Smart Grid
-- **Focus**: Load/failure regimes, long-horizon dependencies  
-- **Scope**: Grid telemetry adapters, transition reporting
+Sensor-sequence inputs and operational-state outputs.
 
-### 8. Cross-Domain Research & AI
-- **Focus**: Experimental HSMM/HMM variants, multi-domain abstraction  
-- **Scope**: Generic sequence containers, posterior access, evaluation hooks
+### Health and wearables
 
----
+Time-series and multimodal observation contracts.
 
-## 🧩 Role in SAE
+### Robotics and motion analytics
 
-`nhsmm-interfaces` enables:
+Motion-sequence inputs and temporal state outputs.
 
-- **Consistent state semantics** across domains  
-- **Pluggable adapters** without modifying NHSMM core  
-- **Clean separation** of probabilistic modeling and application logic  
+### Telecommunications and network analytics
 
-This allows SAE to scale horizontally across industries while maintaining a **unified temporal modeling foundation**.
+Network/flow sequence inputs and state-reporting contracts.
 
----
+### Energy and grid systems
 
-## 💡 Patreon Early Access
+Telemetry inputs and state/transition reporting contracts.
 
-Support the research and early interface development on **Patreon**:
+### Generic and research interfaces
 
-- **Research Preview Tier**: Download per-release snapshots, access research sketches  
-- **Insider Tier**: Unlimited interface access, architectural insights, priority discussions  
-- **SAE Founders Tier**: Early SAE product access and roadmap influence  
+Domain-neutral sequence containers, posterior access, and evaluation hooks.
 
-> Supporting Patreon helps fund ongoing NHSMM research and accelerates SAE development.
+## Design boundaries
 
----
+The repository should remain focused on interface contracts rather than model implementation.
 
-## 📄 License
+In particular:
 
-Released under the **Apache License 2.0** © 2025 **AWA.SI**
+- NHSMM inference and training belong in [`awa-si/nhsmm`](https://github.com/awa-si/nhsmm).
+- Domain policy and application decisions belong in downstream systems.
+- Interfaces should expose only the model information required by downstream consumers.
+- Domain-specific adapters should not change NHSMM core semantics.
+
+## Status
+
+This repository is under active development. Interface contracts may change until they are explicitly documented as stable.
+
+## License
+
+Apache License 2.0 © AWA.SI.

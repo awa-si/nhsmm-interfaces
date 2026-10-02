@@ -325,58 +325,83 @@ At minimum, an engine adapter should test:
 
 The repository tests under `tests/` provide examples for the universal pipeline and NHSMM runtime bridge.
 
-## Research and medical data
+## AWA Access healthcare and clinical research
 
-`ResearchMedicalAdapter` is a schema-driven binding for normalized research, observational, wearable, laboratory, or other medical time-series records.
+`AWAAccessResearchAdapter` is the NHSMM binding for the healthcare/clinical-research workflow defined by AWA Access.
 
-It accepts mapping-like records and converts explicitly declared fields into the canonical NHSMM contracts.
+It follows the AWA Access operating boundary:
+
+- AWA Access performs intake, information structuring, research/navigation, assessment support, and coordination;
+- Odoo remains the authoritative business system of record;
+- FastAPI/workers perform integration, OCR/AI processing, extraction, and orchestration;
+- NHSMM receives only already structured numerical model features/context;
+- the adapter does not diagnose, prescribe, recommend treatment, determine study eligibility, or replace human review.
+
+Canonical path:
+
+```text
+AWA Access intake/documents
+    -> FastAPI / workers
+    -> structured numeric features + workflow metadata
+    -> AWAAccessResearchAdapter
+    -> NHSMMRuntimeAdapter
+    -> nhsmm.HSMMFilterRuntime
+    -> StateEstimate
+    -> AWA Access research/coordination workflow
+```
+
+Example:
 
 ```python
-from adapters import ResearchMedicalAdapter
+from adapters import AWAAccessResearchAdapter
 from nhsmm import HSMMFilterRuntime, load_artifact
 
 model = load_artifact("model.pt")
 model.eval()
 runtime = HSMMFilterRuntime(model)
 
-adapter = ResearchMedicalAdapter(
+adapter = AWAAccessResearchAdapter(
     runtime,
-    feature_fields=("heart_rate", "spo2", "temperature"),
-    context_fields=("activity_level",),
-    timestamp_field="timestamp",
-    subject_id_field="subject_id",
-    sample_id_field="sample_id",
-    metadata_fields=("site",),
+    feature_fields=(
+        "disease_burden",
+        "document_completeness",
+    ),
+    context_fields=(
+        "review_priority",
+    ),
 )
 
 state = adapter.step({
-    "subject_id": "subject-7",
-    "sample_id": "sample-11",
+    "public_ref": "AC-A82XK9Q4",
+    "event_type": "document_processed",
+    "case_state": "under_review",
+    "document_type": "lab_result",
+    "assessment_type": "research",
+    "ai_status": "completed",
     "timestamp": 123,
-    "heart_rate": 72.0,
-    "spo2": 98.5,
-    "temperature": 36.8,
-    "activity_level": 2.0,
-    "site": "study-a",
+    "features": {
+        "disease_burden": 0.7,
+        "document_completeness": 0.9,
+    },
+    "context": {
+        "review_priority": 2.0,
+    },
 })
 ```
 
-The order in `feature_fields` is the model feature order. The order in `context_fields` is the external NHSMM context order.
+`features` and `context` are worker-produced structured numerical payloads. Their field order is explicitly declared by `feature_fields` and `context_fields`; the adapter never derives medical meaning from raw text or files.
 
-When `context_fields=()`, `to_context()` returns `None`, so the NHSMM runtime uses the model's internal context path.
+The following AWA Access operational values are preserved as metadata when present:
 
-The adapter validates that declared feature/context fields exist, are numeric, and are finite. It does not silently pad, truncate, reorder, impute, or replace missing values.
+- `public_ref`;
+- `event_type`;
+- `case_state`;
+- `document_type`;
+- `assessment_type`;
+- `ai_status`.
 
-Subject/sample identifiers and declared metadata are retained as `Observation.metadata`; they are not passed as NHSMM features unless explicitly listed in `feature_fields` or `context_fields`.
+This mirrors the Access domain model without making NHSMM or `nhsmm-interfaces` the business system of record.
 
-Upstream preprocessing remains responsible for:
+Raw medical documents stay outside this adapter. OCR, extraction, translation, normalization, consent/privacy handling, and human review belong to the Access processing pipeline. Odoo should continue to store business metadata only, consistent with the AWA Access module specification.
 
-- unit normalization;
-- resampling and temporal alignment;
-- missing-value policy and imputation;
-- categorical encoding;
-- feature derivation;
-- de-identification/pseudonymization where required by the application;
-- source-format parsing such as FHIR, OMOP, CSV, Parquet, device exports, or laboratory feeds.
-
-The adapter does not implement diagnosis, treatment recommendations, clinical thresholds, alarms, or other medical decision logic. Those concerns remain downstream of the model/interface layer and require their own validation and governance.
+Do not use this adapter as a diagnostic or autonomous eligibility engine. Any clinical interpretation, study eligibility decision, treatment decision, or regulated medical action remains with qualified professionals or institutions.

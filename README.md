@@ -83,9 +83,9 @@ Market-data inputs and regime/state output contracts.
 
 Sensor-sequence inputs and operational-state outputs.
 
-### Health and wearables
+### Health, medical research, and wearables
 
-Time-series and multimodal observation contracts.
+Time-series and multimodal observation contracts. `ResearchMedicalAdapter` provides schema-driven mapping for normalized measurement records; see [`docs/adapters.md`](docs/adapters.md#research-and-medical-data).
 
 ### Robotics and motion analytics
 

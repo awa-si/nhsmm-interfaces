@@ -1,53 +1,50 @@
 # Adapter guide
 
-This document defines how host systems connect to NHSMM through `nhsmm-interfaces`.
+This guide defines how external systems connect to NHSMM through `nhsmm-interfaces`.
 
-## Architecture
-
-The adapter layer separates framework-specific objects from NHSMM model/runtime semantics.
+## 1. Layering
 
 ```text
-host framework
-    |
-    | host event / bar / tick / sample
-    v
-host adapter
-    |
-    | Observation + optional Context
-    v
+host/domain event
+        |
+        v
+adapter mapping
+        |
+        v
+Observation + optional Context
+        |
+        v
 NHSMMRuntimeAdapter
-    |
-    | torch tensors
-    v
+        |
+        v
 nhsmm.HSMMFilterRuntime
-    |
-    | HSMMFilterState
-    v
+        |
+        v
+HSMMFilterState
+        |
+        v
 StateEstimate
-    |
-    v
-host-facing result
+        |
+        v
+host/domain consumer
 ```
 
-A host adapter should translate data and lifecycle only. Strategy rules, entries/exits, portfolio logic, execution policy, and risk policy remain outside this layer.
+The adapter layer translates representation and lifecycle. It must not change NHSMM posterior semantics or embed downstream decision policy.
 
-## Core contracts
-
-The public adapter contracts are exported from `adapters`:
+## 2. Public contracts
 
 ```python
 from adapters import (
     Context,
     NHSMMRuntimeAdapter,
     Observation,
+    ResearchAdapter,
     StateEstimate,
     UniversalAdapter,
 )
 ```
 
-### `Observation`
-
-One canonical model observation.
+### Observation
 
 ```python
 Observation(
@@ -58,18 +55,14 @@ Observation(
 )
 ```
 
-Fields:
+- `values`: ordered feature vector expected by the model;
+- `timestamp`: optional runtime timestamp;
+- `instrument`: optional identifier for instrument-oriented hosts;
+- `metadata`: application metadata not consumed directly by NHSMM.
 
-- `values`: feature vector passed to NHSMM;
-- `timestamp`: optional host timestamp forwarded to the runtime;
-- `instrument`: optional instrument identifier retained in output metadata;
-- `metadata`: adapter/application metadata not consumed by NHSMM directly.
+The adapter must not silently reorder, pad, truncate, or synthesize feature values.
 
-The feature order and dimension must match the model used by the runtime.
-
-### `Context`
-
-Optional external model context for the same event.
+### Context
 
 ```python
 Context(
@@ -78,38 +71,33 @@ Context(
 )
 ```
 
-`values=None` means that no external context tensor is supplied.
+Use `Context` only when the runtime session uses external context. If the model uses its internal encoder context, `to_context()` should return `None`.
 
-The context dimension must match the configured NHSMM context dimension when external context is used.
+### StateEstimate
 
-### `StateEstimate`
+`StateEstimate` contains:
 
-Canonical inference output.
+- `state`: argmax of the state posterior;
+- `posterior`: posterior probability per latent state;
+- `age_posterior`: posterior over current episode age;
+- `timestamp`: observation timestamp;
+- `metadata`: retained adapter metadata.
 
-It contains:
+`age_posterior` is not a predicted duration. Survival/duration/transition forecasts remain separate NHSMM runtime operations.
 
-- `state`: most probable latent state (`argmax` of the state posterior);
-- `posterior`: posterior probability for each latent state;
-- `age_posterior`: posterior probability over the current episode age;
-- `timestamp`: timestamp associated with the observation;
-- `metadata`: retained adapter metadata, including `instrument` when supplied.
+## 3. UniversalAdapter
 
-`age_posterior` is not a predicted duration. Duration, survival, and transition forecasts should remain separate model/runtime operations.
-
-## `UniversalAdapter`
-
-`UniversalAdapter` defines the common host integration lifecycle:
+`UniversalAdapter` defines:
 
 ```text
-host event
+event
   -> to_observation(event)
   -> to_context(event)
   -> infer(observation, context)
   -> from_state(state)
-  -> host-facing result
 ```
 
-Required methods:
+Required hooks:
 
 ```python
 def to_observation(self, event) -> Observation: ...
@@ -117,118 +105,76 @@ def infer(self, observation, context=None) -> StateEstimate: ...
 def from_state(self, state): ...
 ```
 
-Optional method:
+Optional:
 
 ```python
 def to_context(self, event) -> Context | None:
     return None
 ```
 
-For integrations backed by the NHSMM streaming runtime, applications normally subclass `NHSMMRuntimeAdapter` rather than implementing `infer()` themselves.
+Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required.
 
-## `NHSMMRuntimeAdapter`
+## 4. NHSMMRuntimeAdapter
 
-`NHSMMRuntimeAdapter` is the bridge to the public NHSMM streaming API.
+`NHSMMRuntimeAdapter` is the standard bridge to `nhsmm.HSMMFilterRuntime`.
 
-It accepts an existing `nhsmm.HSMMFilterRuntime` and implements:
+It handles:
 
-- canonical values -> Torch tensor conversion;
-- optional context conversion;
+- canonical values -> Torch tensors;
+- optional external context -> Torch tensor;
 - timestamp forwarding;
-- `HSMMFilterRuntime.step(...)` invocation;
+- `HSMMFilterRuntime.step(...)`;
 - `HSMMFilterState.state_posterior` -> `StateEstimate.posterior`;
 - `HSMMFilterState.age_posterior` -> `StateEstimate.age_posterior`;
 - most-probable state selection;
-- canonical output metadata.
+- observation metadata preservation.
 
-It expects one canonical event to produce runtime batch size `1`.
+The current bridge expects one canonical event to produce runtime batch size 1.
 
-## Minimal streaming integration
+### Minimal host adapter
 
 ```python
 from adapters import Context, NHSMMRuntimeAdapter, Observation
 from nhsmm import HSMMFilterRuntime, load_artifact
 
-
 model = load_artifact("model.pt")
 model.eval()
 runtime = HSMMFilterRuntime(model)
 
-
-class TradingAdapter(NHSMMRuntimeAdapter):
-    def to_observation(self, bar):
+class HostAdapter(NHSMMRuntimeAdapter):
+    def to_observation(self, event):
         return Observation(
-            values=(
-                float(bar.close),
-                float(bar.volume),
-            ),
-            timestamp=bar.timestamp,
-            instrument=str(bar.instrument),
+            values=event.features,
+            timestamp=event.timestamp,
         )
 
-    def to_context(self, bar):
-        return Context(
-            values=(
-                float(bar.session_id),
-            )
-        )
+    def to_context(self, event):
+        return Context(values=event.context_features)
 
-
-adapter = TradingAdapter(runtime)
-state = adapter.step(bar)
-
-print(state.state)
-print(state.posterior)
-print(state.age_posterior)
+adapter = HostAdapter(runtime)
+state = adapter.step(event)
 ```
 
-If the NHSMM model uses its internal encoder context, do not override `to_context()`; the default returns `None`.
+If the model uses internal context, omit `to_context()`.
 
-## Host-specific output
+## 5. Runtime lifecycle
 
-The default `NHSMMRuntimeAdapter.from_state()` returns the canonical `StateEstimate` unchanged.
+`HSMMFilterRuntime` is stateful. Runtime lifetime must match stream lifetime.
 
-A host adapter may translate it into a framework-specific event/value:
+Rules:
 
-```python
-class TradingAdapter(NHSMMRuntimeAdapter):
-    def to_observation(self, bar):
-        ...
-
-    def from_state(self, state):
-        return {
-            "regime": state.state,
-            "confidence": max(state.posterior),
-            "posterior": state.posterior,
-            "age_posterior": state.age_posterior,
-            "timestamp": state.timestamp,
-        }
-```
-
-This translation should remain representational. It should not decide whether to buy, sell, size a position, place an order, or accept risk.
-
-## Runtime lifecycle
-
-`HSMMFilterRuntime` is stateful. A host adapter must therefore align runtime lifetime with the host stream lifetime.
-
-Typical rules:
-
-- create one runtime for one independent model stream;
 - preserve event ordering;
-- do not share one mutable runtime across independent instruments unless the model/runtime design explicitly treats them as one batch stream;
-- call `runtime.reset()` when starting a new independent stream, replacing the model context mode, or intentionally discarding filter history;
-- keep timestamp usage consistent after the first event;
-- keep external-context usage consistent after the first event.
+- create separate runtime state for independent streams unless batching is explicitly part of the model design;
+- call `runtime.reset()` when intentionally starting a new stream/history;
+- do not switch timestamp mode after the first step without reset;
+- do not switch between internal and external context after the first step without reset;
+- ensure feature and context dimensions match the model.
 
-The NHSMM runtime fixes timestamp mode and external-context mode for a streaming session until reset.
+A host adapter may own lifecycle wiring, but it should not redefine runtime semantics.
 
-## Internal vs external context
-
-Two modes are supported by the NHSMM runtime:
+## 6. Internal vs external context
 
 ### Internal context
-
-The model derives context from its configured encoder.
 
 ```python
 class Adapter(NHSMMRuntimeAdapter):
@@ -236,11 +182,9 @@ class Adapter(NHSMMRuntimeAdapter):
         return Observation(values=event.features)
 ```
 
-Do not return an external `Context` in this mode.
+`to_context()` remains `None`.
 
 ### External context
-
-The host supplies context explicitly on every runtime step.
 
 ```python
 class Adapter(NHSMMRuntimeAdapter):
@@ -251,103 +195,23 @@ class Adapter(NHSMMRuntimeAdapter):
         return Context(values=event.context_features)
 ```
 
-Once a runtime session begins in external-context mode, subsequent steps must continue to provide external context until `runtime.reset()`.
+Every subsequent step in that runtime session must continue using external context until reset.
 
-## Framework adapters
+## 7. ResearchAdapter
 
-Framework integrations should normally contain only the host-specific conversion layer.
+`ResearchAdapter` is a neutral, schema-driven adapter for structured research/workflow events.
 
-### Nautilus Trader
-
-A Nautilus adapter should map Nautilus events/bars and instrument/session information into `Observation` and optional `Context`, then expose `StateEstimate` to the strategy/component layer.
+It expects nested mappings:
 
 ```text
-Nautilus Bar/Event
-    -> NautilusAdapter.to_observation()/to_context()
-    -> NHSMMRuntimeAdapter
-    -> StateEstimate
-```
-
-Nautilus order management, signal policy, portfolio state, and risk controls remain in Nautilus-side strategy/components.
-
-### Freqtrade
-
-A Freqtrade adapter should map dataframe rows/callback inputs into the same canonical contracts.
-
-```text
-Freqtrade row/callback
-    -> FreqtradeAdapter.to_observation()/to_context()
-    -> NHSMMRuntimeAdapter
-    -> StateEstimate
-```
-
-Freqtrade entry/exit conditions remain in the strategy and consume the returned state information rather than being embedded in the adapter.
-
-## What belongs in an adapter
-
-Appropriate responsibilities:
-
-- host-object field extraction;
-- deterministic feature ordering;
-- timestamp/instrument normalization;
-- optional context construction;
-- conversion to canonical contracts;
-- conversion from `StateEstimate` to a host-facing representation;
-- runtime lifecycle/reset integration.
-
-Responsibilities that do not belong in the adapter:
-
-- trading decisions;
-- entry/exit thresholds;
-- position sizing;
-- order routing policy;
-- portfolio allocation;
-- stop-loss/take-profit policy;
-- model training;
-- modifying NHSMM posterior semantics.
-
-## Error handling
-
-Adapters should fail early when integration contracts do not match the model. In particular, do not silently pad, truncate, reorder, or synthesize missing model features/context dimensions.
-
-Host adapters may validate their own event schema before constructing `Observation` or `Context`, but NHSMM dimensional and runtime invariants should remain authoritative.
-
-## Testing an adapter
-
-At minimum, an engine adapter should test:
-
-1. deterministic host-event -> `Observation` mapping;
-2. deterministic context mapping when used;
-3. timestamp and instrument preservation;
-4. `StateEstimate` passthrough/mapping;
-5. runtime reset behavior at stream boundaries;
-6. absence of strategy/execution side effects from adapter calls.
-
-The repository tests under `tests/` provide examples for the universal pipeline and NHSMM runtime bridge.
-
-## Research adapter
-
-`ResearchAdapter` is a neutral NHSMM binding for structured research and healthcare-access workflows. AWA Access is one example integration profile.
-
-The adapter itself is neutral. For AWA Access, it follows the existing operating boundary:
-
-- AWA Access performs intake, information structuring, research/navigation, assessment support, and coordination;
-- Odoo remains the authoritative business system of record;
-- FastAPI/workers perform integration, OCR/AI processing, extraction, and orchestration;
-- NHSMM receives only already structured numerical model features/context;
-- the adapter does not diagnose, prescribe, recommend treatment, determine study eligibility, or replace human review.
-
-Canonical path:
-
-```text
-Research/access intake or documents
-    -> FastAPI / workers
-    -> structured numeric features + workflow metadata
-    -> ResearchAdapter
-    -> NHSMMRuntimeAdapter
-    -> nhsmm.HSMMFilterRuntime
-    -> StateEstimate
-    -> downstream research/coordination workflow
+event
+├── timestamp
+├── optional workflow metadata
+├── features
+│   ├── feature_a
+│   └── feature_b
+└── context              # optional
+    └── priority
 ```
 
 Example:
@@ -362,36 +226,40 @@ runtime = HSMMFilterRuntime(model)
 
 adapter = ResearchAdapter(
     runtime,
-    feature_fields=(
-        "disease_burden",
-        "document_completeness",
-    ),
-    context_fields=(
-        "review_priority",
-    ),
+    feature_fields=("feature_a", "feature_b"),
+    context_fields=("priority",),
 )
 
 state = adapter.step({
-    "public_ref": "AC-A82XK9Q4",
+    "public_ref": "CASE-001",
     "event_type": "document_processed",
-    "case_state": "under_review",
-    "document_type": "lab_result",
-    "assessment_type": "research",
-    "ai_status": "completed",
     "timestamp": 123,
     "features": {
-        "disease_burden": 0.7,
-        "document_completeness": 0.9,
+        "feature_a": 0.7,
+        "feature_b": 0.9,
     },
     "context": {
-        "review_priority": 2.0,
+        "priority": 2.0,
     },
 })
 ```
 
-`features` and `context` are worker-produced structured numerical payloads. Their field order is explicitly declared by `feature_fields` and `context_fields`; the adapter never derives medical meaning from raw text or files.
+### Validation behavior
 
-The following AWA Access operational values are preserved as metadata when present:
+`ResearchAdapter`:
+
+- requires all declared feature fields;
+- requires all declared context fields when external context is configured;
+- rejects booleans as numeric features/context;
+- rejects non-numeric values;
+- rejects NaN/Inf;
+- preserves deterministic declared ordering.
+
+When `context_fields=()`, it returns `None` from `to_context()` and therefore uses the NHSMM internal-context path.
+
+### Workflow metadata
+
+The current adapter recognizes these optional metadata conventions:
 
 - `public_ref`;
 - `event_type`;
@@ -400,8 +268,92 @@ The following AWA Access operational values are preserved as metadata when prese
 - `assessment_type`;
 - `ai_status`.
 
-This mirrors the Access domain model without making NHSMM or `nhsmm-interfaces` the business system of record.
+Their source field names are configurable through constructor arguments.
 
-Raw medical documents stay outside this adapter. OCR, extraction, translation, normalization, consent/privacy handling, and human review belong to the Access processing pipeline. Odoo should continue to store business metadata only, consistent with the AWA Access module specification.
+These fields are metadata only. They are not NHSMM model inputs unless an upstream pipeline explicitly places corresponding numerical values inside `features` or `context`.
 
-Do not use this adapter as a diagnostic or autonomous eligibility engine. Any clinical interpretation, study eligibility decision, treatment decision, or regulated medical action remains with qualified professionals or institutions.
+### AWA Access profile
+
+AWA Access healthcare/clinical-research is one integration profile for `ResearchAdapter`:
+
+```text
+intake / documents
+    -> FastAPI / workers
+    -> OCR / extraction / structuring / human review
+    -> numerical features + optional context + workflow metadata
+    -> ResearchAdapter
+    -> NHSMM runtime
+    -> StateEstimate
+    -> research/navigation/coordination workflow
+```
+
+The adapter is not the Access business system of record. Raw documents, OCR, extraction, translation, normalization, privacy/consent handling, and human review remain upstream. Odoo/FastAPI/worker responsibilities remain outside `nhsmm-interfaces`.
+
+For medical/research usage, the adapter must not be treated as a diagnostic, treatment, or autonomous study-eligibility engine.
+
+## 8. Framework patterns
+
+### Nautilus Trader
+
+```text
+Nautilus event/bar
+    -> Nautilus-specific adapter
+    -> NHSMMRuntimeAdapter
+    -> StateEstimate
+    -> Nautilus strategy/component
+```
+
+The adapter maps data only. Orders, portfolio logic, signals, and risk controls remain in Nautilus.
+
+### Freqtrade
+
+```text
+Freqtrade row/callback
+    -> Freqtrade-specific adapter
+    -> NHSMMRuntimeAdapter
+    -> StateEstimate
+    -> Freqtrade strategy
+```
+
+Entry/exit rules remain in the strategy.
+
+## 9. What belongs in adapters
+
+Appropriate:
+
+- host/event field extraction;
+- deterministic feature ordering;
+- timestamp/instrument normalization;
+- optional external context construction;
+- canonical contract conversion;
+- host-facing representation conversion;
+- runtime lifecycle integration;
+- validation of adapter-level input shape/type expectations.
+
+Not appropriate:
+
+- model training;
+- modification of NHSMM posterior semantics;
+- trading decisions or execution policy;
+- portfolio/risk policy;
+- diagnosis/treatment logic;
+- raw-document OCR or extraction;
+- application-specific business decisions.
+
+## 10. Testing
+
+Each concrete adapter should test at minimum:
+
+1. deterministic event -> `Observation` mapping;
+2. deterministic context mapping when configured;
+3. metadata/timestamp preservation;
+4. invalid/missing input rejection;
+5. `StateEstimate` mapping/passthrough;
+6. runtime-reset boundaries where lifecycle is owned by the host adapter;
+7. absence of downstream decision side effects.
+
+Repository examples:
+
+- `tests/test_adapter_base.py`;
+- `tests/test_nhsmm_adapter.py`;
+- `tests/test_research_adapter.py`.

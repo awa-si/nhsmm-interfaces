@@ -1,126 +1,166 @@
 # NHSMM Interfaces
 
-Domain-oriented interface definitions and integration contracts for Neural Hidden Semi-Markov Models (NHSMM).
+Integration contracts and adapters for [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
 
-This repository contains interface and adapter contracts intended to separate domain-specific integration code from the NHSMM core package.
+This repository keeps host/framework integration outside the NHSMM core package. It defines canonical input/output contracts and thin adapters that translate external systems into the public NHSMM runtime API.
 
-## Relationship to NHSMM
-
-- **Core modeling and inference:** [awa-si/nhsmm](https://github.com/awa-si/nhsmm)
-- **Integration contracts:** `nhsmm-interfaces`
-
-`nhsmm-interfaces` does not implement the NHSMM model itself and does not define domain-specific decision logic. It provides boundaries, data contracts, and adapter-oriented interfaces for systems that integrate with NHSMM outputs or inputs.
-
-Conceptually:
+## Architecture
 
 ```text
-domain system
-    |
-engine binding
-    |
-UniversalAdapter / NHSMMRuntimeAdapter
-    |
-nhsmm core/runtime
+host / domain system
+        |
+        v
+host or domain adapter
+        |
+        v
+Observation + optional Context
+        |
+        v
+NHSMMRuntimeAdapter
+        |
+        v
+nhsmm.HSMMFilterRuntime
+        |
+        v
+StateEstimate
+        |
+        v
+downstream application
 ```
 
-## Adapters
+The core model, training, filtering, forecasting, and artifact semantics remain in [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
 
-The adapter layer provides a common integration boundary for host frameworks such as Nautilus Trader, Freqtrade, and other event-driven or batch systems.
+## Public adapter API
 
-The canonical streaming path is:
+```python
+from adapters import (
+    Context,
+    NHSMMRuntimeAdapter,
+    Observation,
+    ResearchAdapter,
+    StateEstimate,
+    UniversalAdapter,
+)
+```
+
+### Core contracts
+
+- `Observation` — one ordered model feature vector with optional timestamp, instrument, and metadata.
+- `Context` — optional external context vector plus metadata.
+- `StateEstimate` — most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata.
+- `UniversalAdapter` — engine-neutral orchestration contract.
+- `NHSMMRuntimeAdapter` — bridge to the public `nhsmm.HSMMFilterRuntime`.
+- `ResearchAdapter` — schema-driven adapter for already structured research/workflow events.
+
+## Canonical streaming path
 
 ```text
-host event
+event
   -> to_observation(event)
   -> to_context(event)
-  -> NHSMMRuntimeAdapter.infer(...)
-  -> nhsmm.HSMMFilterRuntime
+  -> infer(observation, context)
   -> StateEstimate
   -> from_state(state)
-  -> host-facing result
 ```
 
-Public contracts:
+Concrete adapters should translate data and lifecycle only. Domain decisions remain outside the adapter layer.
 
-- `Observation`: ordered model feature values plus optional timestamp, instrument, and metadata;
-- `Context`: optional external model-context values plus metadata;
-- `StateEstimate`: most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata;
-- `UniversalAdapter`: engine-neutral orchestration contract;
-- `NHSMMRuntimeAdapter`: bridge from the canonical contracts to the public NHSMM streaming runtime.
+Examples:
 
-Concrete framework adapters should normally subclass `NHSMMRuntimeAdapter` and implement only host-specific translation such as `to_observation()` and, when external context is used, `to_context()`.
+- Nautilus Trader: market/bar/event mapping into NHSMM observations/context;
+- Freqtrade: row/callback mapping into the same canonical contracts;
+- research/healthcare workflows: structured worker/API payloads through `ResearchAdapter`;
+- other event-driven systems: subclass `NHSMMRuntimeAdapter` or `UniversalAdapter` as appropriate.
 
-They should not contain strategy rules, signal generation, portfolio policy, execution logic, or risk policy.
+## ResearchAdapter
 
-See **[`docs/adapters.md`](docs/adapters.md)** for the full adapter architecture, lifecycle rules, minimal usage example, internal/external context handling, and guidance for Nautilus/Freqtrade integrations.
+`ResearchAdapter` expects upstream processing to provide explicit numerical `features` and, when external context is used, numerical `context`.
 
-## Scope
+```python
+adapter = ResearchAdapter(
+    runtime,
+    feature_fields=("feature_a", "feature_b"),
+    context_fields=("priority",),
+)
 
-The repository is intended to cover contracts such as:
+state = adapter.step({
+    "timestamp": 123,
+    "event_type": "processed",
+    "features": {
+        "feature_a": 0.7,
+        "feature_b": 0.9,
+    },
+    "context": {
+        "priority": 2.0,
+    },
+})
+```
 
-- sequence and observation inputs;
-- context and metadata inputs;
-- latent-state and posterior outputs;
-- duration and transition reporting;
-- batch and streaming adapter boundaries;
-- domain-facing normalization of NHSMM results.
+It validates declared feature/context fields and preserves optional workflow metadata such as `public_ref`, `event_type`, `case_state`, `document_type`, `assessment_type`, and `ai_status`.
 
-The interface layer is kept separate from the probabilistic model so that integration code does not depend directly on NHSMM internals where a narrower contract is sufficient.
-
-## Interface groups
-
-Current domain groupings include:
-
-### Security and cyber-physical systems
-
-Event, telemetry, streaming, and state-output contracts.
-
-### Finance and trading
-
-Market-data inputs and regime/state output contracts.
-
-### IoT and industrial systems
-
-Sensor-sequence inputs and operational-state outputs.
-
-### Healthcare and clinical-research access
-
-Structured healthcare/research workflow contracts. `ResearchAdapter` maps upstream structured research events into NHSMM observations/context while preserving optional workflow metadata; AWA Access is one supported profile. See [`docs/adapters.md`](docs/adapters.md#research-adapter).
-
-### Robotics and motion analytics
-
-Motion-sequence inputs and temporal state outputs.
-
-### Telecommunications and network analytics
-
-Network/flow sequence inputs and state-reporting contracts.
-
-### Energy and grid systems
-
-Telemetry inputs and state/transition reporting contracts.
-
-### Generic and research interfaces
-
-Domain-neutral sequence containers, posterior access, and evaluation hooks.
+It does not parse raw documents, perform OCR, impute data, infer domain meaning, or make application decisions. AWA Access healthcare/clinical-research workflows are one example profile using this neutral adapter.
 
 ## Design boundaries
 
-The repository should remain focused on interface contracts rather than model implementation.
+Belongs here:
 
-In particular:
+- host-object or event mapping;
+- deterministic feature ordering;
+- optional external-context mapping;
+- timestamp/instrument normalization;
+- conversion to/from canonical contracts;
+- runtime lifecycle integration;
+- domain-neutral validation of adapter inputs.
 
-- NHSMM inference and training belong in [`awa-si/nhsmm`](https://github.com/awa-si/nhsmm).
-- Domain policy and application decisions belong in downstream systems.
-- Interfaces should expose only the model information required by downstream consumers.
-- Domain-specific adapters should not change NHSMM core semantics.
+Does not belong here:
+
+- NHSMM model implementation or training;
+- trading strategy, execution, portfolio, or risk policy;
+- medical diagnosis, treatment recommendations, or autonomous eligibility decisions;
+- raw-document OCR/extraction pipelines;
+- application business logic.
+
+## Runtime rules
+
+`HSMMFilterRuntime` is stateful.
+
+Adapters using it must:
+
+- preserve event order;
+- keep timestamp mode consistent within a runtime session;
+- keep internal/external context mode consistent until `runtime.reset()`;
+- use independent runtime state for independent streams unless batching is explicitly designed;
+- ensure feature/context dimensions match the loaded model.
+
+`NHSMMRuntimeAdapter` currently maps one canonical event to runtime batch size 1.
+
+## Repository layout
+
+```text
+adapters/
+├── base.py       # Observation, Context, StateEstimate, UniversalAdapter
+├── nhsmm.py      # NHSMMRuntimeAdapter
+└── research.py   # ResearchAdapter
+
+docs/
+└── adapters.md   # detailed adapter usage and lifecycle rules
+
+tests/
+├── test_adapter_base.py
+├── test_nhsmm_adapter.py
+└── test_research_adapter.py
+```
+
+Legacy/domain work may exist elsewhere in the repository while it is migrated toward these contracts.
 
 ## Documentation
 
-- [`docs/adapters.md`](docs/adapters.md) — adapter architecture and usage
+- [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and ResearchAdapter usage.
+- [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.
 
 ## Status
 
-This repository is under active development. Interface contracts may change until they are explicitly documented as stable.
+The interface layer is under active development. Contracts may change until explicitly documented as stable.
 
 ## License
 

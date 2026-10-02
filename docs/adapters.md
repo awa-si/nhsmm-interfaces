@@ -325,11 +325,11 @@ At minimum, an engine adapter should test:
 
 The repository tests under `tests/` provide examples for the universal pipeline and NHSMM runtime bridge.
 
-## AWA Access healthcare and clinical research
+## Research adapter
 
-`AWAAccessResearchAdapter` is the NHSMM binding for the healthcare/clinical-research workflow defined by AWA Access.
+`ResearchAdapter` is a neutral NHSMM binding for structured research and healthcare-access workflows. AWA Access is one example integration profile.
 
-It follows the AWA Access operating boundary:
+The adapter itself is neutral. For AWA Access, it follows the existing operating boundary:
 
 - AWA Access performs intake, information structuring, research/navigation, assessment support, and coordination;
 - Odoo remains the authoritative business system of record;
@@ -340,27 +340,27 @@ It follows the AWA Access operating boundary:
 Canonical path:
 
 ```text
-AWA Access intake/documents
+Research/access intake or documents
     -> FastAPI / workers
     -> structured numeric features + workflow metadata
-    -> AWAAccessResearchAdapter
+    -> ResearchAdapter
     -> NHSMMRuntimeAdapter
     -> nhsmm.HSMMFilterRuntime
     -> StateEstimate
-    -> AWA Access research/coordination workflow
+    -> downstream research/coordination workflow
 ```
 
 Example:
 
 ```python
-from adapters import AWAAccessResearchAdapter
+from adapters import ResearchAdapter
 from nhsmm import HSMMFilterRuntime, load_artifact
 
 model = load_artifact("model.pt")
 model.eval()
 runtime = HSMMFilterRuntime(model)
 
-adapter = AWAAccessResearchAdapter(
+adapter = ResearchAdapter(
     runtime,
     feature_fields=(
         "disease_burden",

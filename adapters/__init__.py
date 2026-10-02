@@ -1,6 +1,6 @@
 from .base import Context, Observation, StateEstimate, UniversalAdapter
 from .nhsmm import NHSMMRuntimeAdapter
-from .awa_access import AWAAccessResearchAdapter
+from .research import ResearchAdapter
 
 __all__ = [
     "Context",
@@ -8,5 +8,5 @@ __all__ = [
     "StateEstimate",
     "UniversalAdapter",
     "NHSMMRuntimeAdapter",
-    "AWAAccessResearchAdapter",
+    "ResearchAdapter",
 ]

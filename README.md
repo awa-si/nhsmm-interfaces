@@ -85,7 +85,7 @@ Sensor-sequence inputs and operational-state outputs.
 
 ### Healthcare and clinical-research access
 
-AWA Access healthcare/research workflow contracts. `AWAAccessResearchAdapter` maps structured AWA Access worker/API events into NHSMM observations/context while preserving case, document, assessment, and AI-processing metadata; see [`docs/adapters.md`](docs/adapters.md#awa-access-healthcare-and-clinical-research).
+Structured healthcare/research workflow contracts. `ResearchAdapter` maps upstream structured research events into NHSMM observations/context while preserving optional workflow metadata; AWA Access is one supported profile. See [`docs/adapters.md`](docs/adapters.md#research-adapter).
 
 ### Robotics and motion analytics
 

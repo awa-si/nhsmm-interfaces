@@ -324,3 +324,59 @@ At minimum, an engine adapter should test:
 6. absence of strategy/execution side effects from adapter calls.
 
 The repository tests under `tests/` provide examples for the universal pipeline and NHSMM runtime bridge.
+
+## Research and medical data
+
+`ResearchMedicalAdapter` is a schema-driven binding for normalized research, observational, wearable, laboratory, or other medical time-series records.
+
+It accepts mapping-like records and converts explicitly declared fields into the canonical NHSMM contracts.
+
+```python
+from adapters import ResearchMedicalAdapter
+from nhsmm import HSMMFilterRuntime, load_artifact
+
+model = load_artifact("model.pt")
+model.eval()
+runtime = HSMMFilterRuntime(model)
+
+adapter = ResearchMedicalAdapter(
+    runtime,
+    feature_fields=("heart_rate", "spo2", "temperature"),
+    context_fields=("activity_level",),
+    timestamp_field="timestamp",
+    subject_id_field="subject_id",
+    sample_id_field="sample_id",
+    metadata_fields=("site",),
+)
+
+state = adapter.step({
+    "subject_id": "subject-7",
+    "sample_id": "sample-11",
+    "timestamp": 123,
+    "heart_rate": 72.0,
+    "spo2": 98.5,
+    "temperature": 36.8,
+    "activity_level": 2.0,
+    "site": "study-a",
+})
+```
+
+The order in `feature_fields` is the model feature order. The order in `context_fields` is the external NHSMM context order.
+
+When `context_fields=()`, `to_context()` returns `None`, so the NHSMM runtime uses the model's internal context path.
+
+The adapter validates that declared feature/context fields exist, are numeric, and are finite. It does not silently pad, truncate, reorder, impute, or replace missing values.
+
+Subject/sample identifiers and declared metadata are retained as `Observation.metadata`; they are not passed as NHSMM features unless explicitly listed in `feature_fields` or `context_fields`.
+
+Upstream preprocessing remains responsible for:
+
+- unit normalization;
+- resampling and temporal alignment;
+- missing-value policy and imputation;
+- categorical encoding;
+- feature derivation;
+- de-identification/pseudonymization where required by the application;
+- source-format parsing such as FHIR, OMOP, CSV, Parquet, device exports, or laboratory feeds.
+
+The adapter does not implement diagnosis, treatment recommendations, clinical thresholds, alarms, or other medical decision logic. Those concerns remain downstream of the model/interface layer and require their own validation and governance.

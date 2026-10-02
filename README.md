@@ -83,9 +83,9 @@ Market-data inputs and regime/state output contracts.
 
 Sensor-sequence inputs and operational-state outputs.
 
-### Health, medical research, and wearables
+### Healthcare and clinical-research access
 
-Time-series and multimodal observation contracts. `ResearchMedicalAdapter` provides schema-driven mapping for normalized measurement records; see [`docs/adapters.md`](docs/adapters.md#research-and-medical-data).
+AWA Access healthcare/research workflow contracts. `AWAAccessResearchAdapter` maps structured AWA Access worker/API events into NHSMM observations/context while preserving case, document, assessment, and AI-processing metadata; see [`docs/adapters.md`](docs/adapters.md#awa-access-healthcare-and-clinical-research).
 
 ### Robotics and motion analytics
 

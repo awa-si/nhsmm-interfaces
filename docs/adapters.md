@@ -295,15 +295,22 @@ For medical/research usage, the adapter must not be treated as a diagnostic, tre
 
 ### Nautilus Trader
 
+Nautilus-specific documentation now lives with the adapter under `adapters/nautilus/`.
+
+- [`adapters/nautilus/README.md`](../adapters/nautilus/README.md) — adapter contract and scope;
+- [`adapters/nautilus/DEVELOPMENT.md`](../adapters/nautilus/DEVELOPMENT.md) — current draft design, lifecycle mapping, and implementation plan.
+
+The intended flow remains:
+
 ```text
 Nautilus event/bar
-    -> Nautilus-specific adapter
+    -> Nautilus DataActor / mapper
     -> NHSMMRuntimeAdapter
-    -> StateEstimate
+    -> StateEstimate / structured CustomData
     -> Nautilus strategy/component
 ```
 
-The adapter maps data only. Orders, portfolio logic, signals, and risk controls remain in Nautilus.
+Orders, portfolio logic, signals, and risk controls remain in Nautilus.
 
 ### Freqtrade
 

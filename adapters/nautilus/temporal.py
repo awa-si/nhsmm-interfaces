@@ -39,7 +39,3 @@ def temporal_state_fields(
     if observation_contract != TEMPORAL_OBSERVATION_CONTRACT:
         raise ValueError("state estimate has incompatible temporal observation contract")
     return instrument_id, ts_event, decision_sequence, trigger_timeframe, observation_contract
-
-
-# Compatibility alias for pre-rename consumers.
-NautilusTemporalAdapter = TemporalAdapter

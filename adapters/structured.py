@@ -10,13 +10,7 @@ from .nhsmm import NHSMMRuntimeAdapter
 
 
 class StructuredEventAdapter(NHSMMRuntimeAdapter):
-    """Map structured workflow events to NHSMM.
-
-    The adapter consumes already structured numeric model features produced by
-    an upstream research/data-processing layer. Optional workflow metadata can
-    be preserved, but raw-document parsing, OCR, diagnosis, eligibility logic,
-    and domain decisions remain outside this adapter.
-    """
+    """Map structured event mappings to NHSMM observations and context."""
 
     def __init__(
         self,
@@ -24,15 +18,10 @@ class StructuredEventAdapter(NHSMMRuntimeAdapter):
         *,
         feature_fields: Sequence[str],
         context_fields: Sequence[str] = (),
+        metadata_fields: Sequence[str] = (),
         features_field: str = "features",
         context_field: str = "context",
         timestamp_field: str = "timestamp",
-        public_ref_field: str = "public_ref",
-        event_type_field: str = "event_type",
-        case_state_field: str = "case_state",
-        document_type_field: str = "document_type",
-        assessment_type_field: str = "assessment_type",
-        ai_status_field: str = "ai_status",
     ) -> None:
         super().__init__(runtime)
         self.feature_fields = self._validate_fields(
@@ -41,19 +30,12 @@ class StructuredEventAdapter(NHSMMRuntimeAdapter):
         self.context_fields = self._validate_fields(
             context_fields, name="context_fields", allow_empty=True
         )
+        self.metadata_fields = self._validate_fields(
+            metadata_fields, name="metadata_fields", allow_empty=True
+        )
         self.features_field = self._validate_name(features_field, "features_field")
         self.context_field = self._validate_name(context_field, "context_field")
         self.timestamp_field = self._validate_name(timestamp_field, "timestamp_field")
-        self.public_ref_field = self._validate_name(public_ref_field, "public_ref_field")
-        self.event_type_field = self._validate_name(event_type_field, "event_type_field")
-        self.case_state_field = self._validate_name(case_state_field, "case_state_field")
-        self.document_type_field = self._validate_name(
-            document_type_field, "document_type_field"
-        )
-        self.assessment_type_field = self._validate_name(
-            assessment_type_field, "assessment_type_field"
-        )
-        self.ai_status_field = self._validate_name(ai_status_field, "ai_status_field")
 
     @staticmethod
     def _validate_name(value: str, name: str) -> str:
@@ -83,9 +65,8 @@ class StructuredEventAdapter(NHSMMRuntimeAdapter):
             raise TypeError(f"{name} must be a mapping")
         return value
 
-    @classmethod
+    @staticmethod
     def _vector(
-        cls,
         source: Mapping[str, Any],
         fields: Sequence[str],
         *,
@@ -108,34 +89,21 @@ class StructuredEventAdapter(NHSMMRuntimeAdapter):
         return tuple(values)
 
     def _metadata(self, event: Mapping[str, Any]) -> dict[str, Any]:
-        pairs = (
-            ("public_ref", self.public_ref_field),
-            ("event_type", self.event_type_field),
-            ("case_state", self.case_state_field),
-            ("document_type", self.document_type_field),
-            ("assessment_type", self.assessment_type_field),
-            ("ai_status", self.ai_status_field),
-        )
         return {
-            canonical: event[field]
-            for canonical, field in pairs
+            field: event[field]
+            for field in self.metadata_fields
             if field in event and event[field] is not None
         }
 
     def to_observation(self, event: Any) -> Observation:
-        record = self._mapping(event, name="research event")
+        record = self._mapping(event, name="structured event")
         if self.features_field not in record:
             raise KeyError(f"missing structured features: {self.features_field}")
 
-        features = self._mapping(
-            record[self.features_field],
-            name=self.features_field,
-        )
-        timestamp = record.get(self.timestamp_field)
-
+        features = self._mapping(record[self.features_field], name=self.features_field)
         return Observation(
             values=self._vector(features, self.feature_fields, kind="feature"),
-            timestamp=timestamp,
+            timestamp=record.get(self.timestamp_field),
             metadata=self._metadata(record),
         )
 
@@ -143,7 +111,7 @@ class StructuredEventAdapter(NHSMMRuntimeAdapter):
         if not self.context_fields:
             return None
 
-        record = self._mapping(event, name="research event")
+        record = self._mapping(event, name="structured event")
         if self.context_field not in record:
             raise KeyError(f"missing structured context: {self.context_field}")
 
@@ -152,8 +120,3 @@ class StructuredEventAdapter(NHSMMRuntimeAdapter):
             values=self._vector(context, self.context_fields, kind="context"),
             metadata=self._metadata(record),
         )
-
-
-# Compatibility aliases for pre-rename consumers.
-StructuredAdapter = StructuredEventAdapter
-ResearchAdapter = StructuredEventAdapter

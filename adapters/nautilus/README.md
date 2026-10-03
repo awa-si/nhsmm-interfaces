@@ -117,7 +117,7 @@ NautilusTrader is an integration dependency only for this package. Generic impor
 
 - `adapters/base.py`
 - `adapters/nhsmm.py`
-- `adapters/research.py`
+- `adapters/structured.py`
 
 Importing `adapters.nautilus` requires NautilusTrader.
 

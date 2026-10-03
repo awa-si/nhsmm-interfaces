@@ -11,8 +11,8 @@ from .actor import (
     NHSMM_STATE_DATA_TYPE,
     TEMPORAL_OBSERVATION_DATA_TYPE,
 )
-from .bar import BAR_FIELDS, BarAdapter, NautilusBarAdapter, PROTOTYPE_BAR_FIELDS
-from .temporal import NautilusTemporalAdapter, TemporalAdapter
+from .bar import BAR_FIELDS, BarAdapter
+from .temporal import TemporalAdapter
 from .contracts import (
     SIGNED_TEMPORAL_OBSERVATIONS,
     TEMPORAL_OBSERVATION_CONTRACT,
@@ -32,11 +32,8 @@ __all__ = [
     "NHSMM_STATE_DATA_TYPE",
     "TEMPORAL_OBSERVATION_DATA_TYPE",
     "BarAdapter",
-    "NautilusBarAdapter",
     "TemporalAdapter",
-    "NautilusTemporalAdapter",
     "BAR_FIELDS",
-    "PROTOTYPE_BAR_FIELDS",
     "SIGNED_TEMPORAL_OBSERVATIONS",
     "TEMPORAL_OBSERVATION_CONTRACT",
     "TEMPORAL_OBSERVATION_DATA_TYPE_NAME",

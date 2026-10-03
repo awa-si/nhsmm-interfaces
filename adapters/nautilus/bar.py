@@ -67,8 +67,3 @@ def state_data_fields(state: StateEstimate) -> tuple[str, str, int, int]:
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("state estimate is missing Nautilus bar provenance") from exc
     return instrument_id, bar_type, ts_event, ts_init
-
-
-# Compatibility aliases for pre-rename consumers.
-NautilusBarAdapter = BarAdapter
-PROTOTYPE_BAR_FIELDS = BAR_FIELDS

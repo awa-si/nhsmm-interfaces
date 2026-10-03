@@ -2,7 +2,7 @@
 
 Integration contracts and adapters for [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
 
-This repository owns host/framework integration for NHSMM. It defines canonical contracts and the concrete integration layer for supported external systems, so downstream projects configure and instantiate adapters instead of implementing their own NHSMM bridges.
+This repository owns host/framework integration for NHSMM. It defines canonical contracts and the concrete integration layer for supported external systems, so downstream projects configure and instantiate adapters instead of implementing their own NHSMM integrations.
 
 ## Architecture
 
@@ -50,7 +50,7 @@ from adapters import (
 - `StateEstimate` — most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata.
 - `Adapter` — minimal runtime-neutral event adapter pipeline.
 - `NHSMMRuntimeAdapter` — adapter for the public `nhsmm.HSMMFilterRuntime`.
-- `StructuredEventAdapter` — schema-driven adapter for structured workflow/research events.
+- `StructuredEventAdapter` — schema-driven adapter for structured event mappings.
 
 ## Canonical streaming path
 
@@ -69,7 +69,7 @@ Examples:
 
 - Nautilus Trader: integration implemented under `adapters/nautilus/`;
 - Freqtrade: integration should be implemented under `adapters/freqtrade/`;
-- research/healthcare workflows: structured worker/API payloads through `StructuredEventAdapter`;
+- structured workflows: mapped event payloads through `StructuredEventAdapter`;
 - other event-driven systems: subclass `NHSMMRuntimeAdapter` or `Adapter` as appropriate.
 
 ## StructuredEventAdapter
@@ -96,9 +96,7 @@ state = adapter.step({
 })
 ```
 
-It validates declared feature/context fields and preserves optional workflow metadata such as `public_ref`, `event_type`, `case_state`, `document_type`, `assessment_type`, and `ai_status`.
-
-It does not parse raw documents, perform OCR, impute data, infer domain meaning, or make application decisions. AWA Access healthcare/clinical-research workflows are one example profile using this neutral adapter.
+It validates declared feature/context fields and preserves only explicitly configured `metadata_fields`. It does not infer domain meaning or make application decisions.
 
 ## Design boundaries
 
@@ -163,7 +161,7 @@ tests/
 ├── test_adapter_base.py
 ├── test_nhsmm_adapter.py
 ├── test_nautilus_adapter.py
-└── test_research_adapter.py
+└── test_structured_adapter.py
 ```
 
 ## Documentation

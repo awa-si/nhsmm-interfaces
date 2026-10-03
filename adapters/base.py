@@ -56,7 +56,3 @@ class Adapter:
         observation = self.to_observation(event)
         state = self.infer(observation, self.to_context(event))
         return self.from_state(state)
-
-
-# Compatibility alias for pre-rename consumers.
-UniversalAdapter = Adapter

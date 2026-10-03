@@ -201,14 +201,14 @@ Every subsequent step in that runtime session must continue using external conte
 
 ## 7. StructuredEventAdapter
 
-`StructuredEventAdapter` is a neutral, schema-driven adapter for structured research/workflow events.
+`StructuredEventAdapter` maps structured event dictionaries into canonical `Observation` and optional `Context` values.
 
-It expects nested mappings:
+Expected shape:
 
 ```text
 event
 ├── timestamp
-├── optional workflow metadata
+├── optional configured metadata fields
 ├── features
 │   ├── feature_a
 │   └── feature_b
@@ -230,11 +230,12 @@ adapter = StructuredEventAdapter(
     runtime,
     feature_fields=("feature_a", "feature_b"),
     context_fields=("priority",),
+    metadata_fields=("event_type", "source_id"),
 )
 
 state = adapter.step({
-    "public_ref": "CASE-001",
-    "event_type": "document_processed",
+    "event_type": "processed",
+    "source_id": "SRC-001",
     "timestamp": 123,
     "features": {
         "feature_a": 0.7,
@@ -246,52 +247,16 @@ state = adapter.step({
 })
 ```
 
-### Validation behavior
-
-`StructuredEventAdapter`:
+The adapter:
 
 - requires all declared feature fields;
 - requires all declared context fields when external context is configured;
-- rejects booleans as numeric features/context;
-- rejects non-numeric values;
-- rejects NaN/Inf;
-- preserves deterministic declared ordering.
+- preserves only explicitly configured `metadata_fields`;
+- rejects duplicate field declarations;
+- rejects booleans, non-numeric values, NaN, and Inf in numeric vectors;
+- preserves declared feature/context ordering.
 
-When `context_fields=()`, it returns `None` from `to_context()` and therefore uses the NHSMM internal-context path.
-
-### Workflow metadata
-
-The current adapter recognizes these optional metadata conventions:
-
-- `public_ref`;
-- `event_type`;
-- `case_state`;
-- `document_type`;
-- `assessment_type`;
-- `ai_status`.
-
-Their source field names are configurable through constructor arguments.
-
-These fields are metadata only. They are not NHSMM model inputs unless an upstream pipeline explicitly places corresponding numerical values inside `features` or `context`.
-
-### AWA Access profile
-
-AWA Access healthcare/clinical-research is one integration profile for `StructuredEventAdapter`:
-
-```text
-intake / documents
-    -> FastAPI / workers
-    -> OCR / extraction / structuring / human review
-    -> numerical features + optional context + workflow metadata
-    -> StructuredEventAdapter
-    -> NHSMM runtime
-    -> StateEstimate
-    -> research/navigation/coordination workflow
-```
-
-The adapter is not the Access business system of record. Raw documents, OCR, extraction, translation, normalization, privacy/consent handling, and human review remain upstream. Odoo/FastAPI/worker responsibilities remain outside `nhsmm-interfaces`.
-
-For medical/research usage, the adapter must not be treated as a diagnostic, treatment, or autonomous study-eligibility engine.
+When `context_fields=()`, `to_context()` returns `None` and the NHSMM runtime uses its internal-context path.
 
 ## 8. Framework patterns
 
@@ -368,4 +333,4 @@ Repository examples:
 
 - `tests/test_adapter_base.py`;
 - `tests/test_nhsmm_adapter.py`;
-- `tests/test_research_adapter.py`.
+- `tests/test_structured_adapter.py`.

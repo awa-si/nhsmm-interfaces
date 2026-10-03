@@ -1,25 +1,20 @@
-from .base import Adapter, Context, Observation, StateEstimate, UniversalAdapter
+from .base import Adapter, Context, Observation, StateEstimate
 
 __all__ = [
     "Adapter",
     "Context",
     "Observation",
     "StateEstimate",
-    "UniversalAdapter",
     "NHSMMRuntimeAdapter",
     "StructuredEventAdapter",
-    "StructuredAdapter",
-    "ResearchAdapter",
 ]
 
 
 def __getattr__(name: str):
     if name == "NHSMMRuntimeAdapter":
         from .nhsmm import NHSMMRuntimeAdapter
-
         return NHSMMRuntimeAdapter
-    if name in {"StructuredEventAdapter", "StructuredAdapter", "ResearchAdapter"}:
-        from .research import ResearchAdapter, StructuredAdapter, StructuredEventAdapter
-
-        return {"StructuredEventAdapter": StructuredEventAdapter, "StructuredAdapter": StructuredAdapter, "ResearchAdapter": ResearchAdapter}[name]
+    if name == "StructuredEventAdapter":
+        from .structured import StructuredEventAdapter
+        return StructuredEventAdapter
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

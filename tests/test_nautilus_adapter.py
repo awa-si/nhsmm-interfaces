@@ -46,9 +46,6 @@ from adapters.nautilus import (
     TemporalAdapter,
     TemporalObservationData,
     TimeframeProvenance,
-    NautilusBarAdapter,
-    NautilusTemporalAdapter,
-    PROTOTYPE_BAR_FIELDS,
 )
 from nhsmm import HSMMFilterRuntime
 from nautilus_trader.model import ActorId, CustomData
@@ -230,9 +227,3 @@ def test_actor_config_rejects_no_input_path():
             consume_temporal_observations=False,
             bar_type=None,
         )
-
-
-def test_nautilus_compatibility_aliases():
-    assert NautilusBarAdapter is BarAdapter
-    assert NautilusTemporalAdapter is TemporalAdapter
-    assert PROTOTYPE_BAR_FIELDS == BAR_FIELDS

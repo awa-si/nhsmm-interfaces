@@ -1,4 +1,4 @@
-from adapters.base import Adapter, Context, Observation, StateEstimate, UniversalAdapter
+from adapters.base import Adapter, Context, Observation, StateEstimate
 
 
 class DemoAdapter(Adapter):
@@ -60,7 +60,3 @@ def test_universal_adapter_defaults_to_identity_output():
     result = IdentityAdapter().step(1)
     assert isinstance(result, StateEstimate)
     assert result.state == 1
-
-
-def test_universal_adapter_alias():
-    assert UniversalAdapter is Adapter

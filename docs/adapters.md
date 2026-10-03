@@ -2,6 +2,8 @@
 
 This guide defines how `nhsmm-interfaces` owns and exposes integrations between external systems and NHSMM.
 
+The model/runtime contract is owned by `awa-si/nhsmm`. Adapters consume its public package API only; model internals, artifact semantics, filtering semantics, forecasts, and context-effect validation remain core-owned. The current core package requires Python 3.12+.
+
 ## 1. Layering
 
 ```text

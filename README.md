@@ -144,7 +144,7 @@ Source layout follows `adapters/<adapter>/`. Wheel/distribution names are indepe
 adapters/
 ├── base.py          # Observation, Context, StateEstimate, Adapter
 ├── nhsmm.py         # NHSMMRuntimeAdapter
-├── research.py      # StructuredEventAdapter
+├── structured.py    # StructuredEventAdapter
 └── nautilus/
     ├── __init__.py
     ├── actor.py
@@ -163,6 +163,21 @@ tests/
 ├── test_nautilus_adapter.py
 └── test_structured_adapter.py
 ```
+
+## Cross-repository contract
+
+`awa-si/nhsmm` is the source of truth for model, artifact, filtering, forecasting, validation, and `HSMMFilterRuntime` semantics. This repository depends only on the public `nhsmm` package API and must not import or mirror model internals.
+
+Current core expectations:
+
+- Python 3.12+;
+- public runtime construction through `nhsmm.HSMMFilterRuntime`;
+- artifact loading through public `nhsmm` artifact/inference helpers;
+- context-effect validation remains core-owned and is not reimplemented here.
+
+`awa-si/nhsmm-interfaces` is the source of truth for host/framework mapping, adapter lifecycle, canonical `Observation`/`Context`/`StateEstimate` contracts, and framework-specific packages such as `adapters/nautilus/`.
+
+The core package can be installed from its released `nhsmm` wheel. This repository is currently source-deployed; future adapter wheels may package individual integrations without moving their source directories.
 
 ## Documentation
 

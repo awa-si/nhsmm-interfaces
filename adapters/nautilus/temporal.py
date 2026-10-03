@@ -5,7 +5,7 @@ from ..nhsmm import NHSMMRuntimeAdapter
 from .contracts import TEMPORAL_OBSERVATION_CONTRACT, TemporalObservationData
 
 
-class NautilusTemporalAdapter(NHSMMRuntimeAdapter):
+class TemporalAdapter(NHSMMRuntimeAdapter):
     """Map admitted Nautilus temporal observations into the NHSMM runtime."""
 
     def to_observation(self, event: TemporalObservationData) -> Observation:
@@ -39,3 +39,7 @@ def temporal_state_fields(
     if observation_contract != TEMPORAL_OBSERVATION_CONTRACT:
         raise ValueError("state estimate has incompatible temporal observation contract")
     return instrument_id, ts_event, decision_sequence, trigger_timeframe, observation_contract
+
+
+# Compatibility alias for pre-rename consumers.
+NautilusTemporalAdapter = TemporalAdapter

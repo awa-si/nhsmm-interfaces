@@ -5,14 +5,14 @@ from typing import Any
 import torch
 from nhsmm import HSMMFilterRuntime
 
-from .base import Context, Observation, StateEstimate, UniversalAdapter
+from .base import Adapter, Context, Observation, StateEstimate
 
 
-class NHSMMRuntimeAdapter(UniversalAdapter):
-    """UniversalAdapter bridge backed by the public NHSMM streaming runtime.
+class NHSMMRuntimeAdapter(Adapter):
+    """Adapter backed by the public NHSMM streaming runtime.
 
     Host-specific adapters only need to implement ``to_observation`` and may
-    override ``to_context`` / ``from_state``. This bridge owns the conversion
+    override ``to_context`` / ``from_state``. This adapter owns the conversion
     between canonical interface objects and ``HSMMFilterRuntime``.
     """
 

@@ -9,14 +9,14 @@ from nautilus_trader.model import Bar, BarType, CustomData, DataType
 from nhsmm import HSMMFilterRuntime
 
 from ..base import StateEstimate
-from .bar import NautilusBarAdapter, PROTOTYPE_BAR_FIELDS, state_data_fields
+from .bar import BAR_FIELDS, BarAdapter, state_data_fields
 from .contracts import (
     NHSMM_STATE_DATA_SCHEMA,
     TEMPORAL_OBSERVATION_CONTRACT,
     TEMPORAL_OBSERVATION_DATA_TYPE_NAME,
     TemporalObservationData,
 )
-from .temporal import NautilusTemporalAdapter, temporal_state_fields
+from .temporal import TemporalAdapter, temporal_state_fields
 
 
 TEMPORAL_OBSERVATION_DATA_TYPE = DataType(
@@ -53,7 +53,7 @@ class NHSMMDataActorConfig(DataActorConfig):
         self,
         *,
         bar_type: BarType | None = None,
-        feature_fields: Iterable[str] = PROTOTYPE_BAR_FIELDS,
+        feature_fields: Iterable[str] = BAR_FIELDS,
         consume_temporal_observations: bool = True,
         **_kwargs,
     ) -> None:
@@ -66,14 +66,14 @@ class NHSMMDataActorConfig(DataActorConfig):
         if self.bar_type is not None and not self.feature_fields:
             raise ValueError("feature_fields must not be empty when bar input is enabled")
         if self.bar_type is None and not self.consume_temporal_observations:
-            raise ValueError("actor must enable temporal input or a prototype bar input")
+            raise ValueError("actor must enable temporal input or a bar fallback input")
 
 
 class NHSMMDataActor(DataActor):
     """Own one NHSMM streaming runtime behind Nautilus data contracts.
 
-    The primary bridge consumes TemporalObservationData CustomData. The
-    optional Bar path remains a prototype/framework fallback only.
+    The primary integration consumes TemporalObservationData CustomData. The
+    optional Bar path remains a framework fallback only.
     """
 
     def __new__(
@@ -89,11 +89,11 @@ class NHSMMDataActor(DataActor):
         runtime: HSMMFilterRuntime,
     ) -> None:
         self.runtime = runtime
-        self.temporal_adapter = NautilusTemporalAdapter(runtime)
+        self.temporal_adapter = TemporalAdapter(runtime)
         self.bar_adapter = (
             None
             if config.bar_type is None
-            else NautilusBarAdapter(runtime, feature_fields=config.feature_fields)
+            else BarAdapter(runtime, feature_fields=config.feature_fields)
         )
 
     def on_start(self) -> None:
@@ -119,7 +119,7 @@ class NHSMMDataActor(DataActor):
             raise TypeError("temporal CustomData payload must be TemporalObservationData")
         estimate = self.temporal_adapter.step(payload)
         if not isinstance(estimate, StateEstimate):
-            raise TypeError("NautilusTemporalAdapter must return StateEstimate")
+            raise TypeError("TemporalAdapter must return StateEstimate")
         self._publish_state(self._temporal_state_data(estimate))
 
     def on_bar(self, bar: Bar) -> None:
@@ -129,7 +129,7 @@ class NHSMMDataActor(DataActor):
             raise RuntimeError("bar adapter is not configured")
         estimate = self.bar_adapter.step(bar)
         if not isinstance(estimate, StateEstimate):
-            raise TypeError("NautilusBarAdapter must return StateEstimate")
+            raise TypeError("BarAdapter must return StateEstimate")
         self._publish_state(self._bar_state_data(estimate))
 
     def _publish_state(self, payload: NHSMMStateData) -> None:

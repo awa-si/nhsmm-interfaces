@@ -1,15 +1,15 @@
 # NautilusTrader adapter
 
-> Status: **implemented bridge prototype; production hardening remains**.
+> Status: **integration implemented; production hardening remains**.
 
-This directory is the canonical implementation owner for the NautilusTrader↔NHSMM bridge. Adapter development uses `awa-si/nautilus@main` as the canonical consumer/integration reference for lifecycle, configuration, CustomData, replay, and strategy-consumption patterns.
+This directory is the canonical implementation owner for the NautilusTrader↔NHSMM integration. Adapter development uses `awa-si/nautilus@main` as the canonical consumer/integration reference for lifecycle, configuration, CustomData, replay, and strategy-consumption patterns.
 
 ## Ownership
 
 - `nhsmm-interfaces/adapters/nautilus` owns Nautilus↔NHSMM integration.
 - `awa-si/nhsmm` owns NHSMM model/runtime semantics and has no Nautilus dependency.
 - `awa-si/nautilus` owns configuration, feature production, strategy policy, execution, and risk.
-- Downstream Nautilus projects must consume this bridge rather than reimplement it locally.
+- Downstream Nautilus projects must consume this adapter rather than reimplement the integration locally.
 
 ## Architecture
 
@@ -23,7 +23,7 @@ TemporalObservationData (CustomData)
 NHSMMDataActor
         |
         v
-NautilusTemporalAdapter
+TemporalAdapter
         |
         v
 NHSMMRuntimeAdapter
@@ -42,7 +42,7 @@ The design is DataActor-first because NHSMM filtering is stateful data processin
 
 ## Primary input contract
 
-The primary bridge input is `TemporalObservationData`, schema `nautilus-temporal-observations-v1`.
+The primary adapter input is `TemporalObservationData`, schema `nautilus-temporal-observations-v1`.
 
 It carries:
 
@@ -91,13 +91,13 @@ Latent state IDs are opaque. No `BUY`, `SELL`, `BULL`, `BEAR`, sizing, execution
 
 ## Optional compatibility contracts
 
-`NHSMMArtifactIdentity` is a bridge-level compatibility record only. It is not an artifact loader and does not redefine the NHSMM artifact format.
+`NHSMMArtifactIdentity` is an adapter-level compatibility record only. It is not an artifact loader and does not redefine the NHSMM artifact format.
 
 `NHSMMForecastData` describes optional policy-free forecast channels retained from the former Nautilus research boundary. The current DataActor does not publish forecast data yet.
 
 ## Bar fallback
 
-`NautilusBarAdapter` remains available as a limited framework/prototype fallback for one ordered Bar stream and explicit OHLCV field selection. It is not the canonical model-facing input path.
+`BarAdapter` remains available as a limited framework fallback for one ordered Bar stream and explicit OHLCV field selection. It is not the canonical model-facing input path.
 
 ## Lifecycle
 

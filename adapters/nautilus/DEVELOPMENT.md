@@ -1,6 +1,6 @@
 # NautilusTrader adapter development
 
-> Status: **bridge prototype implemented**. Temporal CustomData input, DataActor runtime ownership, structured state publication, lifecycle reset, and committed framework-hook tests exist. Remaining work is production hardening rather than initial design.
+> Status: **integration implemented**. Temporal CustomData input, DataActor runtime ownership, structured state publication, lifecycle reset, and committed framework-hook tests exist. Remaining work is production hardening rather than initial design.
 
 ## Canonical sources
 
@@ -10,7 +10,7 @@
 
 Do not infer NHSMM model semantics from this adapter and do not place Nautilus integration code in `awa-si/nhsmm`.
 
-## Implemented bridge
+## Implemented integration
 
 ```text
 TemporalObservationData
@@ -19,7 +19,7 @@ TemporalObservationData
 NHSMMDataActor.on_data
         |
         v
-NautilusTemporalAdapter
+TemporalAdapter
         |
         v
 NHSMMRuntimeAdapter
@@ -38,7 +38,7 @@ The optional Bar path remains a limited framework fallback.
 
 ## Input ownership
 
-The transferred `nautilus-temporal-observations-v1` contract contains the reusable, policy-free data required at the bridge boundary:
+The transferred `nautilus-temporal-observations-v1` contract contains the reusable, policy-free data required at the adapter boundary:
 
 - fixed 18-coordinate feature order;
 - signed/unsigned value ranges;
@@ -47,7 +47,7 @@ The transferred `nautilus-temporal-observations-v1` contract contains the reusab
 - trigger timeframe;
 - optional causal timeframe provenance.
 
-The bridge validates contract shape/ranges/causality. Nautilus consumer code owns TA/Axis construction, freshness, feature admission, and trading policy.
+The adapter validates contract shape/ranges/causality. Nautilus consumer code owns TA/Axis construction, freshness, feature admission, and trading policy.
 
 ## DataActor contract
 
@@ -123,7 +123,7 @@ State IDs remain opaque.
 
 ## Artifact and forecast boundaries
 
-`NHSMMArtifactIdentity` is optional bridge compatibility metadata only:
+`NHSMMArtifactIdentity` is optional adapter compatibility metadata only:
 
 - `artifact_id`;
 - `n_features`;
@@ -133,7 +133,7 @@ State IDs remain opaque.
 
 It does not load or define artifacts.
 
-`NHSMMForecastData` is an optional future bridge payload for:
+`NHSMMForecastData` is an optional future adapter payload for:
 
 - `next_state_prior`;
 - episode-end probability;
@@ -164,7 +164,7 @@ Any context mapping must be explicit, deterministic, and part of the model/inter
 
 ## Deployment / consumer integration
 
-The bridge is currently deployed from source; this repository does not yet define a standalone Python package manifest for the Nautilus wheel. A consumer such as `awa-si/nautilus` should make the repository root available on `PYTHONPATH` during source-based development and install compatible `nhsmm`, PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
+The adapter is currently deployed from source; this repository does not yet define a standalone Python package manifest for the Nautilus wheel. A consumer such as `awa-si/nautilus` should make the repository root available on `PYTHONPATH` during source-based development and install compatible `nhsmm`, PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
 
 This source/PYTHONPATH deployment is transitional. The source remains under `adapters/nautilus/`; a later release workflow can package that source as the `nhsmm-nautilus` wheel without changing the repository layout or Python import path.
 
@@ -187,7 +187,7 @@ print(nautilus_trader.__version__)
 PY
 ```
 
-Re-run the bridge tests whenever that resolved pre-release changes.
+Re-run the adapter tests whenever that resolved pre-release changes.
 
 ### 2. Expose the interface checkout
 
@@ -197,7 +197,7 @@ Until packaging is added, the consumer must expose this repository directly:
 export PYTHONPATH="/path/to/nhsmm-interfaces:$PYTHONPATH"
 ```
 
-Do not copy the Nautilus bridge implementation into the consumer repository.
+Do not copy the Nautilus adapter implementation into the consumer repository.
 
 ### 3. Build/load the NHSMM runtime in bootstrap code
 
@@ -221,7 +221,7 @@ Do not duplicate NHSMM artifact parsing or model semantics inside the Nautilus c
 
 Register the constructed `NHSMMDataActor` through the consumer's current Nautilus component/bootstrap registration path before replay/live execution starts.
 
-The exact registration call is Nautilus-version-sensitive and must be verified against the resolved pre-release and the current `awa-si/nautilus` bootstrap. The bridge contract itself does not own engine construction.
+The exact registration call is Nautilus-version-sensitive and must be verified against the resolved pre-release and the current `awa-si/nautilus` bootstrap. The adapter contract itself does not own engine construction.
 
 Required ordering:
 
@@ -272,7 +272,7 @@ Publish/inject that `CustomData` through the consumer's existing Nautilus data p
 
 Strategies or other actors subscribe to `NHSMM_STATE_DATA_TYPE` and consume `NHSMMStateData`.
 
-Consumer code may use the posterior/age/decision metadata, but must keep trading/risk interpretation outside the bridge.
+Consumer code may use the posterior/age/decision metadata, but must keep trading/risk interpretation outside the adapter.
 
 ### 7. Deployment checks
 
@@ -295,7 +295,7 @@ Before promoting a consumer deployment, additionally verify:
 
 ## Tests
 
-Committed Nautilus bridge tests currently cover:
+Committed Nautilus adapter tests currently cover:
 
 - CustomData timestamp exposure;
 - native DataActorConfig field preservation;
@@ -320,4 +320,4 @@ These are framework-hook tests. End-to-end tests with a real NHSMM artifact/runt
 6. Add multi-stream runtime ownership if multiple instruments/streams are required.
 7. Add CustomData persistence/catalog serialization only if a consumer needs it.
 
-Do not add trading decisions to the adapter or actor. Do not recreate Nautilus↔NHSMM bridge code in downstream trading repositories.
+Do not add trading decisions to the adapter or actor. Do not recreate Nautilus↔NHSMM integration code in downstream trading repositories.

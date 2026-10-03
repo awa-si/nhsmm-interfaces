@@ -1,11 +1,11 @@
 import pytest
 
-from adapters import ResearchAdapter
+from adapters import StructuredEventAdapter
 from nhsmm import HSMMFilterRuntime
 
 
 def _adapter(**kwargs):
-    return ResearchAdapter(
+    return StructuredEventAdapter(
         HSMMFilterRuntime(model=None),
         feature_fields=("disease_burden", "document_completeness"),
         **kwargs,

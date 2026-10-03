@@ -38,9 +38,9 @@ from adapters import (
     Context,
     NHSMMRuntimeAdapter,
     Observation,
-    ResearchAdapter,
+    StructuredEventAdapter,
     StateEstimate,
-    UniversalAdapter,
+    Adapter,
 )
 ```
 
@@ -85,9 +85,9 @@ Use `Context` only when the runtime session uses external context. If the model 
 
 `age_posterior` is not a predicted duration. Survival/duration/transition forecasts remain separate NHSMM runtime operations.
 
-## 3. UniversalAdapter
+## 3. Adapter
 
-`UniversalAdapter` defines:
+`Adapter` defines:
 
 ```text
 event
@@ -114,11 +114,11 @@ def from_state(self, state):
     return state
 ```
 
-Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented under `adapters/<framework>/`.
+Use `Adapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented under `adapters/<framework>/`.
 
 ## 4. NHSMMRuntimeAdapter
 
-`NHSMMRuntimeAdapter` is the standard bridge to `nhsmm.HSMMFilterRuntime`.
+`NHSMMRuntimeAdapter` is the standard adapter for `nhsmm.HSMMFilterRuntime`.
 
 It handles:
 
@@ -131,7 +131,7 @@ It handles:
 - most-probable state selection;
 - observation metadata preservation.
 
-The current bridge expects one canonical event to produce runtime batch size 1.
+The current adapter expects one canonical event to produce runtime batch size 1.
 
 ### Minimal host adapter
 
@@ -179,7 +179,7 @@ Framework adapters in this repository own lifecycle wiring for their host framew
 ### Internal context
 
 ```python
-class Adapter(NHSMMRuntimeAdapter):
+class ExternalContextAdapter(NHSMMRuntimeAdapter):
     def to_observation(self, event):
         return Observation(values=event.features)
 ```
@@ -189,7 +189,7 @@ class Adapter(NHSMMRuntimeAdapter):
 ### External context
 
 ```python
-class Adapter(NHSMMRuntimeAdapter):
+class InternalContextAdapter(NHSMMRuntimeAdapter):
     def to_observation(self, event):
         return Observation(values=event.features)
 
@@ -199,9 +199,9 @@ class Adapter(NHSMMRuntimeAdapter):
 
 Every subsequent step in that runtime session must continue using external context until reset.
 
-## 7. ResearchAdapter
+## 7. StructuredEventAdapter
 
-`ResearchAdapter` is a neutral, schema-driven adapter for structured research/workflow events.
+`StructuredEventAdapter` is a neutral, schema-driven adapter for structured research/workflow events.
 
 It expects nested mappings:
 
@@ -219,14 +219,14 @@ event
 Example:
 
 ```python
-from adapters import ResearchAdapter
+from adapters import StructuredEventAdapter
 from nhsmm import HSMMFilterRuntime, load_artifact
 
 model = load_artifact("model.pt")
 model.eval()
 runtime = HSMMFilterRuntime(model)
 
-adapter = ResearchAdapter(
+adapter = StructuredEventAdapter(
     runtime,
     feature_fields=("feature_a", "feature_b"),
     context_fields=("priority",),
@@ -248,7 +248,7 @@ state = adapter.step({
 
 ### Validation behavior
 
-`ResearchAdapter`:
+`StructuredEventAdapter`:
 
 - requires all declared feature fields;
 - requires all declared context fields when external context is configured;
@@ -276,14 +276,14 @@ These fields are metadata only. They are not NHSMM model inputs unless an upstre
 
 ### AWA Access profile
 
-AWA Access healthcare/clinical-research is one integration profile for `ResearchAdapter`:
+AWA Access healthcare/clinical-research is one integration profile for `StructuredEventAdapter`:
 
 ```text
 intake / documents
     -> FastAPI / workers
     -> OCR / extraction / structuring / human review
     -> numerical features + optional context + workflow metadata
-    -> ResearchAdapter
+    -> StructuredEventAdapter
     -> NHSMM runtime
     -> StateEstimate
     -> research/navigation/coordination workflow
@@ -307,13 +307,13 @@ The canonical flow is:
 ```text
 TemporalObservationData (CustomData)
     -> NHSMMDataActor
-    -> NautilusTemporalAdapter
+    -> TemporalAdapter
     -> NHSMMRuntimeAdapter
     -> NHSMMStateData (CustomData)
     -> Nautilus strategy/component
 ```
 
-The Bar mapper remains a limited prototype/fallback path, not the canonical model-facing input.
+The Bar mapper remains a limited fallback path, not the canonical model-facing input.
 
 Orders, portfolio logic, signals, and risk controls remain in Nautilus.
 

@@ -1,7 +1,7 @@
-from adapters.base import Context, Observation, StateEstimate, UniversalAdapter
+from adapters.base import Adapter, Context, Observation, StateEstimate, UniversalAdapter
 
 
-class DemoAdapter(UniversalAdapter):
+class DemoAdapter(Adapter):
     def to_observation(self, event):
         return Observation(
             values=(event["close"], event["volume"]),
@@ -50,7 +50,7 @@ def test_universal_adapter_step_pipeline():
 
 
 def test_universal_adapter_defaults_to_identity_output():
-    class IdentityAdapter(UniversalAdapter):
+    class IdentityAdapter(Adapter):
         def to_observation(self, event):
             return Observation(values=(float(event),))
 
@@ -60,3 +60,7 @@ def test_universal_adapter_defaults_to_identity_output():
     result = IdentityAdapter().step(1)
     assert isinstance(result, StateEstimate)
     assert result.state == 1
+
+
+def test_universal_adapter_alias():
+    assert UniversalAdapter is Adapter

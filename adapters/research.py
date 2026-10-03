@@ -9,8 +9,8 @@ from .base import Context, Observation
 from .nhsmm import NHSMMRuntimeAdapter
 
 
-class ResearchAdapter(NHSMMRuntimeAdapter):
-    """Bridge structured research workflow events to NHSMM.
+class StructuredEventAdapter(NHSMMRuntimeAdapter):
+    """Map structured workflow events to NHSMM.
 
     The adapter consumes already structured numeric model features produced by
     an upstream research/data-processing layer. Optional workflow metadata can
@@ -152,3 +152,8 @@ class ResearchAdapter(NHSMMRuntimeAdapter):
             values=self._vector(context, self.context_fields, kind="context"),
             metadata=self._metadata(record),
         )
+
+
+# Compatibility aliases for pre-rename consumers.
+StructuredAdapter = StructuredEventAdapter
+ResearchAdapter = StructuredEventAdapter

@@ -9,17 +9,17 @@ from ..base import Observation, StateEstimate
 from ..nhsmm import NHSMMRuntimeAdapter
 
 
-PROTOTYPE_BAR_FIELDS = ("open", "high", "low", "close", "volume")
+BAR_FIELDS = ("open", "high", "low", "close", "volume")
 
 
-class NautilusBarAdapter(NHSMMRuntimeAdapter):
-    """Map one Nautilus ``Bar`` stream into the canonical NHSMM runtime bridge."""
+class BarAdapter(NHSMMRuntimeAdapter):
+    """Map one Nautilus ``Bar`` stream to canonical NHSMM observations."""
 
     def __init__(
         self,
         runtime,
         *,
-        feature_fields: Iterable[str] = PROTOTYPE_BAR_FIELDS,
+        feature_fields: Iterable[str] = BAR_FIELDS,
     ) -> None:
         super().__init__(runtime)
         fields = tuple(feature_fields)
@@ -27,11 +27,11 @@ class NautilusBarAdapter(NHSMMRuntimeAdapter):
             raise ValueError("feature_fields must not be empty")
         if len(set(fields)) != len(fields):
             raise ValueError("feature_fields must be unique")
-        unsupported = tuple(name for name in fields if name not in PROTOTYPE_BAR_FIELDS)
+        unsupported = tuple(name for name in fields if name not in BAR_FIELDS)
         if unsupported:
             raise ValueError(
-                "prototype NautilusBarAdapter supports only bar fields: "
-                + ", ".join(PROTOTYPE_BAR_FIELDS)
+                "BarAdapter supports only bar fields: "
+                + ", ".join(BAR_FIELDS)
             )
         self.feature_fields = fields
 
@@ -67,3 +67,8 @@ def state_data_fields(state: StateEstimate) -> tuple[str, str, int, int]:
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("state estimate is missing Nautilus bar provenance") from exc
     return instrument_id, bar_type, ts_event, ts_init
+
+
+# Compatibility aliases for pre-rename consumers.
+NautilusBarAdapter = BarAdapter
+PROTOTYPE_BAR_FIELDS = BAR_FIELDS

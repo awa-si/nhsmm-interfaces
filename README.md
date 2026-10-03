@@ -10,7 +10,7 @@ This repository owns host/framework integration for NHSMM. It defines canonical 
 external host / domain system
         |
         v
-adapter owned by nhsmm-interfaces
+adapter
         |
         v
 Observation + optional Context
@@ -37,9 +37,9 @@ from adapters import (
     Context,
     NHSMMRuntimeAdapter,
     Observation,
-    ResearchAdapter,
+    StructuredEventAdapter,
     StateEstimate,
-    UniversalAdapter,
+    Adapter,
 )
 ```
 
@@ -48,9 +48,9 @@ from adapters import (
 - `Observation` — one ordered model feature vector with optional timestamp, instrument, and metadata.
 - `Context` — optional external context vector plus metadata.
 - `StateEstimate` — most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata.
-- `UniversalAdapter` — engine-neutral orchestration contract.
-- `NHSMMRuntimeAdapter` — bridge to the public `nhsmm.HSMMFilterRuntime`.
-- `ResearchAdapter` — schema-driven adapter for already structured research/workflow events.
+- `Adapter` — minimal runtime-neutral event adapter pipeline.
+- `NHSMMRuntimeAdapter` — adapter for the public `nhsmm.HSMMFilterRuntime`.
+- `StructuredEventAdapter` — schema-driven adapter for structured workflow/research events.
 
 ## Canonical streaming path
 
@@ -69,15 +69,15 @@ Examples:
 
 - Nautilus Trader: integration implemented under `adapters/nautilus/`;
 - Freqtrade: integration should be implemented under `adapters/freqtrade/`;
-- research/healthcare workflows: structured worker/API payloads through `ResearchAdapter`;
-- other event-driven systems: subclass `NHSMMRuntimeAdapter` or `UniversalAdapter` as appropriate.
+- research/healthcare workflows: structured worker/API payloads through `StructuredEventAdapter`;
+- other event-driven systems: subclass `NHSMMRuntimeAdapter` or `Adapter` as appropriate.
 
-## ResearchAdapter
+## StructuredEventAdapter
 
-`ResearchAdapter` expects upstream processing to provide explicit numerical `features` and, when external context is used, numerical `context`.
+`StructuredEventAdapter` expects upstream processing to provide explicit numerical `features` and, when external context is used, numerical `context`.
 
 ```python
-adapter = ResearchAdapter(
+adapter = StructuredEventAdapter(
     runtime,
     feature_fields=("feature_a", "feature_b"),
     context_fields=("priority",),
@@ -144,9 +144,9 @@ Source layout follows `adapters/<adapter>/`. Wheel/distribution names are indepe
 
 ```text
 adapters/
-├── base.py          # Observation, Context, StateEstimate, UniversalAdapter
+├── base.py          # Observation, Context, StateEstimate, Adapter
 ├── nhsmm.py         # NHSMMRuntimeAdapter
-├── research.py      # ResearchAdapter
+├── research.py      # StructuredEventAdapter
 └── nautilus/
     ├── __init__.py
     ├── actor.py
@@ -168,7 +168,7 @@ tests/
 
 ## Documentation
 
-- [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and ResearchAdapter usage.
+- [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and StructuredEventAdapter usage.
 - [NautilusTrader adapter](adapters/nautilus/README.md) — adapter contract and scope.
 - [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — implementation, deployment, hardening, and lifecycle notes.
 - [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.

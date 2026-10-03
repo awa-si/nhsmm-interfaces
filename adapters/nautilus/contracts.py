@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from math import isfinite
 
 
-# Canonical Nautilus<->NHSMM bridge schemas.
+# Canonical Nautilus<->NHSMM integration schemas.
 TEMPORAL_OBSERVATION_CONTRACT = "nautilus-temporal-observations-v1"
 TEMPORAL_OBSERVATION_DATA_TYPE_NAME = "NHSMMTemporalObservationData"
 NHSMM_STATE_DATA_SCHEMA = "nautilus-nhsmm-state-v1"
@@ -75,7 +75,7 @@ class TemporalObservationData:
     """Primary Nautilus-facing NHSMM input contract.
 
     The consumer produces the already-admitted 18-coordinate observation.
-    The bridge validates shape/ranges and causal provenance only; TA/Axis
+    The adapter validates shape/ranges and causal provenance only; TA/Axis
     construction, freshness policy and trading admission remain outside.
     """
 
@@ -133,10 +133,10 @@ class TemporalObservationData:
 
 @dataclass(frozen=True, slots=True)
 class NHSMMArtifactIdentity:
-    """Optional bridge compatibility identity for a loaded NHSMM artifact.
+    """Optional integration compatibility identity for a loaded NHSMM artifact.
 
     This is not an artifact loader or artifact-format contract. It records only
-    the dimensions/observation identity the Nautilus bridge may need to reject
+    the dimensions/observation identity the Nautilus adapter may need to reject
     incompatible composition.
     """
 
@@ -159,7 +159,7 @@ class NHSMMArtifactIdentity:
 
 @dataclass(frozen=True, slots=True)
 class NHSMMForecastData:
-    """Optional future bridge payload for policy-free NHSMM forecast channels.
+    """Optional future integration payload for policy-free NHSMM forecast channels.
 
     The current DataActor does not publish this payload yet.
     """

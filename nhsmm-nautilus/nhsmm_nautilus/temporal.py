@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ..base import Observation, StateEstimate
-from ..nhsmm import NHSMMRuntimeAdapter
+from adapters.base import Observation, StateEstimate
+from adapters.nhsmm import NHSMMRuntimeAdapter
 from .contracts import TEMPORAL_OBSERVATION_CONTRACT, TemporalObservationData
 
 

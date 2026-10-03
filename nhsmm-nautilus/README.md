@@ -6,7 +6,7 @@ This directory is the canonical implementation owner for the NautilusTrader↔NH
 
 ## Ownership
 
-- `nhsmm-interfaces/adapters/nautilus` owns Nautilus↔NHSMM integration.
+- `nhsmm-interfaces/nhsmm-nautilus` owns Nautilus↔NHSMM integration.
 - `awa-si/nhsmm` owns NHSMM model/runtime semantics and has no Nautilus dependency.
 - `awa-si/nautilus` owns configuration, feature production, strategy policy, execution, and risk.
 - Downstream Nautilus projects must consume this bridge rather than reimplement it locally.

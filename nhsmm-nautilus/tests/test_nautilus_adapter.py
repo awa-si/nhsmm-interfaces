@@ -33,7 +33,7 @@ def _ensure_model_stubs():
 _ensure_model_stubs()
 
 from adapters.base import StateEstimate
-from adapters.nautilus import (
+from nhsmm_nautilus import (
     NHSMMDataActor,
     NHSMMDataActorConfig,
     NHSMMStateData,

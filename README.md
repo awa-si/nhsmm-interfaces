@@ -67,8 +67,8 @@ Concrete adapters are implemented and maintained in this repository. External pr
 
 Examples:
 
-- Nautilus Trader: integration implemented under `adapters/nautilus/`;
-- Freqtrade: integration should be implemented under `adapters/freqtrade/`;
+- Nautilus Trader: integration implemented under `nhsmm-nautilus/`;
+- Freqtrade: future integration should follow the wheel-oriented `nhsmm-freqtrade/` layout;
 - research/healthcare workflows: structured worker/API payloads through `ResearchAdapter`;
 - other event-driven systems: subclass `NHSMMRuntimeAdapter` or `UniversalAdapter` as appropriate.
 
@@ -140,17 +140,29 @@ Adapters using it must:
 
 ## Repository layout
 
+Adapter distributions follow the `nhsmm-<adapter>` naming pattern. Distribution directories use hyphens (for example `nhsmm-nautilus/`), while Python import packages use underscores (for example `nhsmm_nautilus`).
+
+
 ```text
 adapters/
 ├── base.py          # Observation, Context, StateEstimate, UniversalAdapter
 ├── nhsmm.py         # NHSMMRuntimeAdapter
-├── research.py      # ResearchAdapter
-└── nautilus/
-    ├── README.md     # adapter contract / usage
-    └── DEVELOPMENT.md # design and implementation notes
+└── research.py      # ResearchAdapter
+
+nhsmm-nautilus/
+├── README.md
+├── DEVELOPMENT.md
+└── nhsmm_nautilus/
+    ├── __init__.py
+    ├── actor.py
+    ├── bar.py
+    ├── contracts.py
+    └── temporal.py
+└── tests/
+    └── test_nautilus_adapter.py
 
 docs/
-└── adapters.md   # detailed adapter usage and lifecycle rules
+└── adapters.md   # detailed generic adapter usage and lifecycle rules
 
 tests/
 ├── test_adapter_base.py
@@ -163,8 +175,8 @@ Legacy/domain work may exist elsewhere in the repository while it is migrated to
 ## Documentation
 
 - [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and ResearchAdapter usage.
-- [NautilusTrader adapter](adapters/nautilus/README.md) — adapter contract and scope.
-- [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — draft design and implementation notes.
+- [NautilusTrader adapter](nhsmm-nautilus/README.md) — adapter contract and scope.
+- [NautilusTrader development](nhsmm-nautilus/DEVELOPMENT.md) — draft design and implementation notes.
 - [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.
 
 ## Status

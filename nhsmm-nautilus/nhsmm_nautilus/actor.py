@@ -8,7 +8,7 @@ from nautilus_trader.config import DataActorConfig
 from nautilus_trader.model import Bar, BarType, CustomData, DataType
 from nhsmm import HSMMFilterRuntime
 
-from ..base import StateEstimate
+from adapters.base import StateEstimate
 from .bar import NautilusBarAdapter, PROTOTYPE_BAR_FIELDS, state_data_fields
 from .contracts import (
     NHSMM_STATE_DATA_SCHEMA,

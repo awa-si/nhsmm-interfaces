@@ -5,8 +5,8 @@ from typing import Any, Iterable
 
 from nautilus_trader.model import Bar
 
-from ..base import Observation, StateEstimate
-from ..nhsmm import NHSMMRuntimeAdapter
+from adapters.base import Observation, StateEstimate
+from adapters.nhsmm import NHSMMRuntimeAdapter
 
 
 PROTOTYPE_BAR_FIELDS = ("open", "high", "low", "close", "volume")

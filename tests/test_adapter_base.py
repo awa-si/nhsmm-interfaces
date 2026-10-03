@@ -1,4 +1,4 @@
-from adapters import Context, Observation, StateEstimate, UniversalAdapter
+from adapters.base import Context, Observation, StateEstimate, UniversalAdapter
 
 
 class DemoAdapter(UniversalAdapter):
@@ -47,3 +47,16 @@ def test_universal_adapter_step_pipeline():
     )
 
     assert result == {"state": 2, "confidence": 0.7, "age_mode": 4}
+
+
+def test_universal_adapter_defaults_to_identity_output():
+    class IdentityAdapter(UniversalAdapter):
+        def to_observation(self, event):
+            return Observation(values=(float(event),))
+
+        def infer(self, observation, context=None):
+            return StateEstimate(state=1, posterior=(1.0,))
+
+    result = IdentityAdapter().step(1)
+    assert isinstance(result, StateEstimate)
+    assert result.state == 1

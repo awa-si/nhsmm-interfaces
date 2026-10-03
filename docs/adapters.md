@@ -102,17 +102,19 @@ Required hooks:
 ```python
 def to_observation(self, event) -> Observation: ...
 def infer(self, observation, context=None) -> StateEstimate: ...
-def from_state(self, state): ...
 ```
 
-Optional:
+Optional hooks:
 
 ```python
 def to_context(self, event) -> Context | None:
     return None
+
+def from_state(self, state):
+    return state
 ```
 
-Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented inside this repository inside this repository under `adapters/<framework>/`.
+Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented under `adapters/<framework>/`.
 
 ## 4. NHSMMRuntimeAdapter
 

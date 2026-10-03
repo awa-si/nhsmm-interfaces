@@ -62,7 +62,3 @@ class NHSMMRuntimeAdapter(UniversalAdapter):
             timestamp=observation.timestamp,
             metadata=metadata,
         )
-
-    def from_state(self, state: StateEstimate) -> StateEstimate:
-        """Default host-facing representation is the canonical state itself."""
-        return state

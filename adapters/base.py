@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Observation:
     """Canonical one-step observation passed toward an NHSMM runtime."""
 
@@ -15,7 +14,7 @@ class Observation:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Context:
     """Canonical one-step context accompanying an observation."""
 
@@ -23,7 +22,7 @@ class Context:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StateEstimate:
     """Engine-neutral representation of one NHSMM filtering result."""
 
@@ -34,38 +33,26 @@ class StateEstimate:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
-class UniversalAdapter(ABC):
-    """Engine-neutral boundary between host systems and NHSMM inference.
+class UniversalAdapter:
+    """Minimal engine-neutral one-event adapter pipeline."""
 
-    Concrete adapters translate host-specific input objects into canonical
-    observations/context and translate an NHSMM result back into a host-facing
-    value. They must not contain strategy, signal, portfolio, execution, or
-    risk policy.
-    """
-
-    @abstractmethod
     def to_observation(self, event: Any) -> Observation:
-        """Translate one host event/bar/tick/sample into canonical features."""
+        raise NotImplementedError
 
     def to_context(self, event: Any) -> Context | None:
-        """Translate host metadata into optional model context."""
         return None
 
-    @abstractmethod
     def infer(
         self,
         observation: Observation,
         context: Context | None = None,
     ) -> StateEstimate:
-        """Invoke the configured NHSMM batch/runtime boundary."""
+        raise NotImplementedError
 
-    @abstractmethod
     def from_state(self, state: StateEstimate) -> Any:
-        """Translate a canonical state estimate into a host-facing value."""
+        return state
 
     def step(self, event: Any) -> Any:
-        """Canonical one-event adapter pipeline."""
         observation = self.to_observation(event)
-        context = self.to_context(event)
-        state = self.infer(observation, context)
+        state = self.infer(observation, self.to_context(event))
         return self.from_state(state)

@@ -4,13 +4,13 @@ from dataclasses import dataclass
 from math import isfinite
 
 
-# Copied from the frozen Nautilus research input contract at
-# awa-si/nautilus@3947be02c6b98198813c613aee1c5b2ea27aaf31.
-# This adapter module now owns the reusable host-facing representation; the
-# consumer repository remains responsible for producing the values causally.
+# Canonical Nautilus<->NHSMM bridge schemas.
 TEMPORAL_OBSERVATION_CONTRACT = "nautilus-temporal-observations-v1"
 TEMPORAL_OBSERVATION_DATA_TYPE_NAME = "NHSMMTemporalObservationData"
 NHSMM_STATE_DATA_SCHEMA = "nautilus-nhsmm-state-v1"
+
+# Copied from the frozen Nautilus research input contract at
+# awa-si/nautilus@3947be02c6b98198813c613aee1c5b2ea27aaf31.
 TEMPORAL_OBSERVATION_NAMES = (
     "1h_direction",
     "1h_efficiency",
@@ -72,11 +72,11 @@ class TimeframeProvenance:
 
 @dataclass(frozen=True, slots=True)
 class TemporalObservationData:
-    """Nautilus-facing NHSMM input built from the fixed 18-coordinate contract.
+    """Primary Nautilus-facing NHSMM input contract.
 
-    The adapter validates shape, finite/range constraints and causal provenance.
-    It intentionally does not own TA/Axis construction, freshness policy,
-    strategy admission, or trading semantics.
+    The consumer produces the already-admitted 18-coordinate observation.
+    The bridge validates shape/ranges and causal provenance only; TA/Axis
+    construction, freshness policy and trading admission remain outside.
     """
 
     instrument_id: str
@@ -133,11 +133,11 @@ class TemporalObservationData:
 
 @dataclass(frozen=True, slots=True)
 class NHSMMArtifactIdentity:
-    """Bridge-level compatibility identity for a loaded NHSMM artifact.
+    """Optional bridge compatibility identity for a loaded NHSMM artifact.
 
-    This does not define or validate the NHSMM artifact format itself. It only
-    records the model dimensions and observation contract the Nautilus bridge
-    needs to reject incompatible wiring.
+    This is not an artifact loader or artifact-format contract. It records only
+    the dimensions/observation identity the Nautilus bridge may need to reject
+    incompatible composition.
     """
 
     artifact_id: str
@@ -159,7 +159,10 @@ class NHSMMArtifactIdentity:
 
 @dataclass(frozen=True, slots=True)
 class NHSMMForecastData:
-    """Optional policy-free NHSMM forecast channels exposed to Nautilus."""
+    """Optional future bridge payload for policy-free NHSMM forecast channels.
+
+    The current DataActor does not publish this payload yet.
+    """
 
     next_state_prior: tuple[float, ...]
     episode_end_probability: float

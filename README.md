@@ -138,9 +138,12 @@ Adapters using it must:
 
 ```text
 adapters/
-├── base.py       # Observation, Context, StateEstimate, UniversalAdapter
-├── nhsmm.py      # NHSMMRuntimeAdapter
-└── research.py   # ResearchAdapter
+├── base.py          # Observation, Context, StateEstimate, UniversalAdapter
+├── nhsmm.py         # NHSMMRuntimeAdapter
+├── research.py      # ResearchAdapter
+└── nautilus/
+    ├── README.md     # adapter contract / usage
+    └── DEVELOPMENT.md # design and implementation notes
 
 docs/
 └── adapters.md   # detailed adapter usage and lifecycle rules
@@ -156,7 +159,8 @@ Legacy/domain work may exist elsewhere in the repository while it is migrated to
 ## Documentation
 
 - [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and ResearchAdapter usage.
-- [NautilusTrader interface draft](docs/nautilus-draft.md) — Actor-first Nautilus integration design; draft only.
+- [NautilusTrader adapter](adapters/nautilus/README.md) — adapter contract and scope.
+- [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — draft design and implementation notes.
 - [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.
 
 ## Status

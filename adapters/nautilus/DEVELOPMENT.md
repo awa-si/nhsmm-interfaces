@@ -6,7 +6,7 @@ Source reviewed: `nautechsystems/nautilus_trader` `develop`, revision `51d37c2ce
 
 ## Goal
 
-Integrate NHSMM as a reusable state-estimation component inside NautilusTrader without coupling probabilistic model/runtime semantics to a trading strategy.
+Implement the reusable NautilusTrader↔NHSMM integration inside `nhsmm-interfaces`, so Nautilus application repositories only configure and consume it without maintaining parallel bridge code.
 
 Recommended direction:
 
@@ -41,7 +41,7 @@ NautilusTrader separates data actors from strategies:
 
 NHSMM filtering is stateful inference, not order management. Therefore the initial interface should target a dedicated `DataActor` rather than embed NHSMM directly in `Strategy`.
 
-A strategy may still own an adapter for small experiments, but that should not be the primary reusable architecture.
+A strategy should not own a separate NHSMM adapter implementation. It may instantiate/configure the adapter-owned actor/component for experiments, but reusable integration code remains in this repository.
 
 ## Nautilus inputs
 
@@ -118,7 +118,7 @@ Multi-input or synchronized-feature models need a separate explicit design and s
 
 ### 1. Nautilus event mapper
 
-Responsible only for converting Nautilus objects into canonical interface contracts.
+Implemented and maintained in this repository. Responsible only for converting Nautilus objects into canonical interface contracts.
 
 Conceptually:
 
@@ -138,7 +138,7 @@ This mapper should preserve:
 
 ### 2. NHSMM actor
 
-A higher-level Nautilus `DataActor` should own:
+Implemented and maintained in this repository. A higher-level Nautilus `DataActor` should own:
 
 - market-data subscriptions;
 - NHSMM runtime instance(s);
@@ -321,6 +321,8 @@ This configuration needs further review against Nautilus config serialization/im
 Draft recommendation:
 
 - keep NautilusTrader an optional integration dependency;
+- ship the concrete Nautilus integration from this repository;
+- downstream Nautilus projects import/configure it instead of reimplementing it;
 - do not import Nautilus from `adapters/base.py` or `adapters/nhsmm.py`;
 - place any eventual implementation in a dedicated module/package, e.g. `adapters/nautilus/`;
 - importing the generic adapter package should not require NautilusTrader to be installed.
@@ -353,4 +355,4 @@ Bar mapper
     -> optional persistence/live validation
 ```
 
-Do not add trading decisions to the adapter or actor.
+Do not add trading decisions to the adapter or actor. Do not push Nautilus↔NHSMM bridge ownership into downstream trading repositories.

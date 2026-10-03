@@ -112,7 +112,7 @@ def to_context(self, event) -> Context | None:
     return None
 ```
 
-Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented inside this repository as dedicated wheel-oriented `nhsmm-<adapter>/` packages.
+Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented inside this repository inside this repository under `adapters/<framework>/`.
 
 ## 4. NHSMMRuntimeAdapter
 
@@ -295,10 +295,10 @@ For medical/research usage, the adapter must not be treated as a diagnostic, tre
 
 ### Nautilus Trader
 
-Nautilus-specific documentation now lives with the adapter under `nhsmm-nautilus/`.
+Nautilus-specific documentation now lives with the adapter under `adapters/nautilus/`.
 
-- [`nhsmm-nautilus/README.md`](../nhsmm-nautilus/README.md) — adapter contract and scope;
-- [`nhsmm-nautilus/DEVELOPMENT.md`](../nhsmm-nautilus/DEVELOPMENT.md) — current draft design, lifecycle mapping, and implementation plan.
+- [`adapters/nautilus/README.md`](../adapters/nautilus/README.md) — adapter contract and scope;
+- [`adapters/nautilus/DEVELOPMENT.md`](../adapters/nautilus/DEVELOPMENT.md) — current draft design, lifecycle mapping, and implementation plan.
 
 The intended flow remains:
 
@@ -322,7 +322,7 @@ Freqtrade row/callback
     -> Freqtrade strategy
 ```
 
-The Freqtrade integration should likewise follow `nhsmm-freqtrade/` with import package `nhsmm_freqtrade`; downstream strategies configure/consume it. Entry/exit rules remain in the strategy.
+The Freqtrade integration should likewise live under `adapters/freqtrade/`; downstream strategies configure/consume it. Entry/exit rules remain in the strategy.
 
 ## 9. What belongs in adapters
 

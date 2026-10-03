@@ -90,7 +90,7 @@ The injected runtime remains Python-owned state.
 
 For `DataActorConfig`, native fields such as `actor_id`, `log_events`, and `log_commands` are consumed by the native `__new__` before the Python subclass `__init__` executes. The subclass therefore calls `super().__init__()` and stores only its custom fields.
 
-This behavior is covered by `nhsmm-nautilus/tests/test_nautilus_adapter.py`.
+This behavior is covered by `tests/test_nautilus_adapter.py`.
 
 ## Temporal CustomData timing
 
@@ -164,9 +164,9 @@ Any context mapping must be explicit, deterministic, and part of the model/inter
 
 ## Deployment / consumer integration
 
-The bridge is currently deployed from source; this adapter directory does not yet define its standalone Python package manifest. A consumer such as `awa-si/nautilus` should make both the repository root (for the generic bridge core) and `nhsmm-nautilus/` (for the `nhsmm_nautilus` package) available on `PYTHONPATH` during source-based development, and install compatible `nhsmm`, PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
+The bridge is currently deployed from source; this repository does not yet define a standalone Python package manifest for the Nautilus wheel. A consumer such as `awa-si/nautilus` should make the repository root available on `PYTHONPATH` during source-based development and install compatible `nhsmm`, PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
 
-This source/PYTHONPATH deployment is transitional. Adapter distributions follow the `nhsmm-<adapter>` naming pattern; this adapter is planned as the `nhsmm-nautilus` wheel with Python import package `nhsmm_nautilus`.
+This source/PYTHONPATH deployment is transitional. The source remains under `adapters/nautilus/`; a later release workflow can package that source as the `nhsmm-nautilus` wheel without changing the repository layout or Python import path.
 
 ### 1. Install runtime dependencies
 
@@ -194,7 +194,7 @@ Re-run the bridge tests whenever that resolved pre-release changes.
 Until packaging is added, the consumer must expose this repository directly:
 
 ```bash
-export PYTHONPATH="/path/to/nhsmm-interfaces:/path/to/nhsmm-interfaces/nhsmm-nautilus:$PYTHONPATH"
+export PYTHONPATH="/path/to/nhsmm-interfaces:$PYTHONPATH"
 ```
 
 Do not copy the Nautilus bridge implementation into the consumer repository.
@@ -204,7 +204,7 @@ Do not copy the Nautilus bridge implementation into the consumer repository.
 Artifact loading remains outside this adapter. The application/bootstrap layer must construct a public `HSMMFilterRuntime` using the canonical `awa-si/nhsmm` API, then inject that runtime into the actor:
 
 ```python
-from nhsmm_nautilus import NHSMMDataActor, NHSMMDataActorConfig
+from adapters.nautilus import NHSMMDataActor, NHSMMDataActorConfig
 
 runtime = ...  # construct/load through public awa-si/nhsmm APIs
 
@@ -240,7 +240,7 @@ start engine/replay/live node
 The Nautilus consumer produces `TemporalObservationData` only after its own feature freshness/admission checks pass:
 
 ```python
-from nhsmm_nautilus import (
+from adapters.nautilus import (
     TEMPORAL_OBSERVATION_DATA_TYPE,
     TemporalObservationData,
     TimeframeProvenance,
@@ -279,8 +279,8 @@ Consumer code may use the posterior/age/decision metadata, but must keep trading
 Run at minimum:
 
 ```bash
-PYTHONPATH=.:nhsmm-nautilus python -m pytest -q nhsmm-nautilus/tests/test_nautilus_adapter.py
-python -m py_compile nhsmm-nautilus/*.py
+PYTHONPATH=. python -m pytest -q tests/test_nautilus_adapter.py
+python -m py_compile adapters/nautilus/*.py
 ```
 
 Before promoting a consumer deployment, additionally verify:

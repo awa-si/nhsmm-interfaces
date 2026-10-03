@@ -17,6 +17,8 @@ from .contracts import (
     TEMPORAL_OBSERVATION_NAMES,
     TemporalObservationData,
     TimeframeProvenance,
+    NHSMMArtifactIdentity,
+    NHSMMForecastData,
 )
 
 __all__ = [
@@ -31,4 +33,6 @@ __all__ = [
     "TEMPORAL_OBSERVATION_NAMES",
     "TemporalObservationData",
     "TimeframeProvenance",
+    "NHSMMArtifactIdentity",
+    "NHSMMForecastData",
 ]

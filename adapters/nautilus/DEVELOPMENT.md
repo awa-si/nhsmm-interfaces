@@ -367,3 +367,5 @@ Bar mapper
 ```
 
 Do not add trading decisions to the adapter or actor. Do not push Nautilus↔NHSMM bridge ownership into downstream trading repositories.
+
+Bridge-level compatibility data also includes opaque NHSMM state semantics, optional policy-free forecast channels (`next_state_prior`, episode/state-change probabilities, survival/end-within by explicit horizons), and artifact compatibility identity (`artifact_id`, observation contract, feature/state/duration dimensions). These describe integration data only and do not duplicate model or evaluation logic.

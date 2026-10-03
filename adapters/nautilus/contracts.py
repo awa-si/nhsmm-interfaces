@@ -119,3 +119,69 @@ class TemporalObservationData:
                 raise ValueError(f"future timeframe provenance: {item.timeframe}")
             if item.processed_sequence > self.decision_sequence:
                 raise ValueError(f"future processed sequence: {item.timeframe}")
+
+
+@dataclass(frozen=True, slots=True)
+class NHSMMArtifactIdentity:
+    """Bridge-level compatibility identity for a loaded NHSMM artifact.
+
+    This does not define or validate the NHSMM artifact format itself. It only
+    records the model dimensions and observation contract the Nautilus bridge
+    needs to reject incompatible wiring.
+    """
+
+    artifact_id: str
+    n_features: int
+    n_states: int
+    max_duration: int
+    observation_contract: str = TEMPORAL_OBSERVATION_CONTRACT
+
+    def __post_init__(self) -> None:
+        if not self.artifact_id:
+            raise ValueError("artifact_id must be non-empty")
+        if self.observation_contract != TEMPORAL_OBSERVATION_CONTRACT:
+            raise ValueError("unsupported NHSMM observation contract")
+        if self.n_features != len(TEMPORAL_OBSERVATION_NAMES):
+            raise ValueError("NHSMM artifact must match the 18-coordinate observation contract")
+        if self.n_states < 1 or self.max_duration < 1:
+            raise ValueError("NHSMM artifact dimensions must be positive")
+
+
+@dataclass(frozen=True, slots=True)
+class NHSMMForecastData:
+    """Optional policy-free NHSMM forecast channels exposed to Nautilus."""
+
+    next_state_prior: tuple[float, ...]
+    episode_end_probability: float
+    state_change_probability: float
+    horizons: tuple[int, ...] = ()
+    survival_probability: tuple[float, ...] = ()
+    end_within_probability: tuple[float, ...] = ()
+
+    def __post_init__(self) -> None:
+        prior = tuple(float(value) for value in self.next_state_prior)
+        if not prior or any(not isfinite(v) or v < 0.0 or v > 1.0 for v in prior):
+            raise ValueError("next_state_prior must be a non-empty probability vector")
+        if abs(sum(prior) - 1.0) > 1e-6:
+            raise ValueError("next_state_prior must sum to one")
+        object.__setattr__(self, "next_state_prior", prior)
+
+        for name in ("episode_end_probability", "state_change_probability"):
+            value = float(getattr(self, name))
+            if not isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must be within [0, 1]")
+            object.__setattr__(self, name, value)
+
+        horizons = tuple(int(value) for value in self.horizons)
+        if any(value <= 0 for value in horizons) or tuple(sorted(set(horizons))) != horizons:
+            raise ValueError("horizons must be strictly increasing positive integers")
+        object.__setattr__(self, "horizons", horizons)
+
+        survival = tuple(float(value) for value in self.survival_probability)
+        end_within = tuple(float(value) for value in self.end_within_probability)
+        if len(survival) != len(horizons) or len(end_within) != len(horizons):
+            raise ValueError("forecast vectors must match horizons")
+        if any(not isfinite(v) or not 0.0 <= v <= 1.0 for v in survival + end_within):
+            raise ValueError("forecast probabilities must be within [0, 1]")
+        object.__setattr__(self, "survival_probability", survival)
+        object.__setattr__(self, "end_within_probability", end_within)

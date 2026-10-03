@@ -113,3 +113,5 @@ All Nautilus-specific NHSMM integration implementation belongs under this direct
 Development and integration verification are anchored to [`awa-si/nautilus@main`](https://github.com/awa-si/nautilus). That repository is the canonical consumer reference for how the adapter must plug into the AWA Nautilus stack. The upstream [`nautechsystems/nautilus_trader`](https://github.com/nautechsystems/nautilus_trader) project remains the authority for NautilusTrader framework API semantics and version compatibility.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the reviewed Nautilus API surface, draft lifecycle mapping, open questions, and implementation sequence.
+
+Bridge-level compatibility data also includes opaque NHSMM state semantics, optional policy-free forecast channels (`next_state_prior`, episode/state-change probabilities, survival/end-within by explicit horizons), and artifact compatibility identity (`artifact_id`, observation contract, feature/state/duration dimensions). These describe integration data only and do not duplicate model or evaluation logic.

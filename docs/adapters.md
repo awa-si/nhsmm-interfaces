@@ -298,17 +298,20 @@ For medical/research usage, the adapter must not be treated as a diagnostic, tre
 Nautilus-specific documentation now lives with the adapter under `adapters/nautilus/`.
 
 - [`adapters/nautilus/README.md`](../adapters/nautilus/README.md) — adapter contract and scope;
-- [`adapters/nautilus/DEVELOPMENT.md`](../adapters/nautilus/DEVELOPMENT.md) — current draft design, lifecycle mapping, and implementation plan.
+- [`adapters/nautilus/DEVELOPMENT.md`](../adapters/nautilus/DEVELOPMENT.md) — current implementation, lifecycle, deployment, and hardening notes.
 
-The intended flow remains:
+The canonical flow is:
 
 ```text
-Nautilus event/bar
-    -> Nautilus DataActor / mapper
+TemporalObservationData (CustomData)
+    -> NHSMMDataActor
+    -> NautilusTemporalAdapter
     -> NHSMMRuntimeAdapter
-    -> StateEstimate / structured CustomData
+    -> NHSMMStateData (CustomData)
     -> Nautilus strategy/component
 ```
+
+The Bar mapper remains a limited prototype/fallback path, not the canonical model-facing input.
 
 Orders, portfolio logic, signals, and risk controls remain in Nautilus.
 

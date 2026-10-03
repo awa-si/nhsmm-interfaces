@@ -170,7 +170,7 @@ tests/
 
 - [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and ResearchAdapter usage.
 - [NautilusTrader adapter](adapters/nautilus/README.md) — adapter contract and scope.
-- [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — draft design and implementation notes.
+- [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — implementation, deployment, hardening, and lifecycle notes.
 - [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.
 
 ## Status

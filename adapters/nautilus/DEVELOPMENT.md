@@ -2,11 +2,16 @@
 
 > Status: **draft**. This file tracks design and implementation decisions. The public-facing adapter overview lives in [README.md](README.md).
 
-Source reviewed: `nautechsystems/nautilus_trader` `develop`, revision `51d37c2ce809897dfe09f7d019ff6d278407ae3b`.
+Development references:
+
+- `awa-si/nautilus@main` — canonical consumer/integration repository. Use its current lifecycle, configuration, CustomData, replay, and strategy-consumption patterns when designing and validating this adapter.
+- `nautechsystems/nautilus_trader` — canonical framework API owner. Use the upstream version/API surface to verify `DataActor`, `DataActorConfig`, `DataType`, `CustomData`, subscriptions, lifecycle callbacks, and publication semantics.
+
+Previously reviewed upstream revision: `nautechsystems/nautilus_trader` `develop` at `51d37c2ce809897dfe09f7d019ff6d278407ae3b`. Re-verify against the currently targeted NautilusTrader version before implementation changes.
 
 ## Goal
 
-Implement the reusable NautilusTrader↔NHSMM integration inside `nhsmm-interfaces`, so Nautilus application repositories only configure and consume it without maintaining parallel bridge code.
+Implement the reusable NautilusTrader↔NHSMM integration inside `nhsmm-interfaces`, so Nautilus application repositories only configure and consume it without maintaining parallel bridge code. `awa-si/nautilus@main` is the primary consumer target and integration-validation reference.
 
 Recommended direction:
 

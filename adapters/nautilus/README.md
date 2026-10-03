@@ -2,7 +2,7 @@
 
 > Status: **draft / not implemented**.
 
-This directory is the canonical and implementation-owning home for the NautilusTrader integration.
+This directory is the canonical and implementation-owning home for the NautilusTrader integration. Adapter development uses `awa-si/nautilus@main` as the canonical consumer/integration reference for real repository lifecycle, configuration, data-flow, replay, and strategy-consumption patterns.
 
 ## Purpose
 
@@ -102,6 +102,8 @@ Generic imports must continue to work without NautilusTrader installed:
 
 All Nautilus-specific NHSMM integration implementation belongs under this directory. Downstream projects should import the public adapter/actor/config objects rather than subclassing or duplicating the bridge unless an explicitly unsupported extension requires it.
 
-## Development
+## Development reference
+
+Development and integration verification are anchored to [`awa-si/nautilus@main`](https://github.com/awa-si/nautilus). That repository is the canonical consumer reference for how the adapter must plug into the AWA Nautilus stack. The upstream [`nautechsystems/nautilus_trader`](https://github.com/nautechsystems/nautilus_trader) project remains the authority for NautilusTrader framework API semantics and version compatibility.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the reviewed Nautilus API surface, draft lifecycle mapping, open questions, and implementation sequence.

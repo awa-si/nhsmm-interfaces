@@ -1,6 +1,6 @@
 # Adapter guide
 
-This guide defines how external systems connect to NHSMM through `nhsmm-interfaces`.
+This guide defines how `nhsmm-interfaces` owns and exposes integrations between external systems and NHSMM.
 
 ## 1. Layering
 
@@ -29,7 +29,7 @@ StateEstimate
 host/domain consumer
 ```
 
-The adapter layer translates representation and lifecycle. It must not change NHSMM posterior semantics or embed downstream decision policy.
+The adapter layer translates representation and lifecycle. Framework-specific integration code belongs here, not in downstream Nautilus/Freqtrade/application repositories. Downstream projects should configure and instantiate these adapters. The adapter layer must not change NHSMM posterior semantics or embed downstream decision policy.
 
 ## 2. Public contracts
 
@@ -112,7 +112,7 @@ def to_context(self, event) -> Context | None:
     return None
 ```
 
-Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required.
+Use `UniversalAdapter` directly only when the inference backend is not the standard NHSMM streaming runtime or when a different orchestration boundary is intentionally required. New supported framework integrations should be implemented inside this repository under `adapters/<framework>/`.
 
 ## 4. NHSMMRuntimeAdapter
 
@@ -170,7 +170,7 @@ Rules:
 - do not switch between internal and external context after the first step without reset;
 - ensure feature and context dimensions match the model.
 
-A host adapter may own lifecycle wiring, but it should not redefine runtime semantics.
+Framework adapters in this repository own lifecycle wiring for their host framework, but must not redefine NHSMM runtime semantics.
 
 ## 6. Internal vs external context
 
@@ -322,7 +322,7 @@ Freqtrade row/callback
     -> Freqtrade strategy
 ```
 
-Entry/exit rules remain in the strategy.
+The Freqtrade integration should likewise live under `adapters/freqtrade/`; downstream strategies configure/consume it. Entry/exit rules remain in the strategy.
 
 ## 9. What belongs in adapters
 

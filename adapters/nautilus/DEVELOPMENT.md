@@ -1,6 +1,6 @@
 # NautilusTrader adapter development
 
-> Status: **prototype**. The Bar/DataActor framework hook and transferred temporal input contract exist; artifact loading, warm-up, temporal-input actor wiring, persistence, and live integration remain unstabilized. The public-facing adapter overview lives in [README.md](README.md).
+> Status: **prototype**. The DataActor now consumes the transferred temporal CustomData contract and publishes structured NHSMM state; artifact loading, warm-up/history, persistence, forecast publication, and live integration remain unstabilized. The public-facing adapter overview lives in [README.md](README.md).
 
 Development references:
 
@@ -61,7 +61,7 @@ Initial draft priority:
 1. `Bar`;
 2. `TradeTick`;
 3. `QuoteTick`;
-4. custom structured data where an application supplies derived features.
+4. custom structured data where an application supplies derived features. The transferred `TemporalObservationData` 18-coordinate CustomData path is now the primary prototype integration path.
 
 The first implementation should probably support `Bar` only and generalize after the lifecycle and timestamp behavior is verified.
 

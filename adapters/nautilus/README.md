@@ -50,7 +50,7 @@ The adapter owns the reusable representation in `contracts.py`; `awa-si/nautilus
 
 ## Initial scope
 
-The current prototype implements a single ordered `Bar` stream for framework-hook validation. The transferred 18-coordinate temporal contract is the intended model-facing input boundary for the real integration; wiring that contract into the actor is the next implementation step.
+The current prototype now supports the transferred 18-coordinate temporal contract as the primary model-facing CustomData input to `NHSMMDataActor`. A single ordered `Bar` stream remains available only as a prototype/framework fallback.
 
 Later extensions may cover:
 

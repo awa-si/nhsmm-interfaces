@@ -9,6 +9,8 @@ from math import isfinite
 # This adapter module now owns the reusable host-facing representation; the
 # consumer repository remains responsible for producing the values causally.
 TEMPORAL_OBSERVATION_CONTRACT = "nautilus-temporal-observations-v1"
+TEMPORAL_OBSERVATION_DATA_TYPE_NAME = "NHSMMTemporalObservationData"
+NHSMM_STATE_DATA_SCHEMA = "nautilus-nhsmm-state-v1"
 TEMPORAL_OBSERVATION_NAMES = (
     "1h_direction",
     "1h_efficiency",
@@ -119,6 +121,14 @@ class TemporalObservationData:
                 raise ValueError(f"future timeframe provenance: {item.timeframe}")
             if item.processed_sequence > self.decision_sequence:
                 raise ValueError(f"future processed sequence: {item.timeframe}")
+
+    @property
+    def ts_event(self) -> int:
+        return self.asof_ts_ns
+
+    @property
+    def ts_init(self) -> int:
+        return self.asof_ts_ns
 
 
 @dataclass(frozen=True, slots=True)

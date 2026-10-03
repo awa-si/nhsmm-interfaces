@@ -1,20 +1,29 @@
 # NautilusTrader adapter
 
-> Status: **prototype implemented; integration not yet production-stable**.
+> Status: **implemented bridge prototype; production hardening remains**.
 
-This directory is the canonical and implementation-owning home for the NautilusTrader integration. Adapter development uses `awa-si/nautilus@main` as the canonical consumer/integration reference for real repository lifecycle, configuration, data-flow, replay, and strategy-consumption patterns.
+This directory is the canonical implementation owner for the NautilusTrader↔NHSMM bridge. Adapter development uses `awa-si/nautilus@main` as the canonical consumer/integration reference for lifecycle, configuration, CustomData, replay, and strategy-consumption patterns.
 
-## Purpose
+## Ownership
 
-The Nautilus adapter connects NautilusTrader market/data components to the public NHSMM runtime without embedding trading decisions in the adapter layer. The integration is implemented here; Nautilus application repositories should not need their own NHSMM bridge classes.
+- `nhsmm-interfaces/adapters/nautilus` owns Nautilus↔NHSMM integration.
+- `awa-si/nhsmm` owns NHSMM model/runtime semantics and has no Nautilus dependency.
+- `awa-si/nautilus` owns configuration, feature production, strategy policy, execution, and risk.
+- Downstream Nautilus projects must consume this bridge rather than reimplement it locally.
 
-Target architecture:
+## Architecture
 
 ```text
-Nautilus market data
+Nautilus feature/data producer
         |
         v
-NHSMM DataActor
+TemporalObservationData (CustomData)
+        |
+        v
+NHSMMDataActor
+        |
+        v
+NautilusTemporalAdapter
         |
         v
 NHSMMRuntimeAdapter
@@ -29,89 +38,105 @@ NHSMMStateData (CustomData)
 Nautilus Strategy / Actor consumers
 ```
 
-Ownership rule:
+The design is DataActor-first because NHSMM filtering is stateful data processing, not order management.
 
-- `nhsmm-interfaces/adapters/nautilus` owns the Nautilus↔NHSMM integration;
-- downstream Nautilus projects own only configuration, composition, strategy policy, execution, and risk;
-- adapter fixes/versioning happen here once and are reused by all Nautilus consumers.
+## Primary input contract
 
-The current design is **DataActor-first**:
+The primary bridge input is `TemporalObservationData`, schema `nautilus-temporal-observations-v1`.
 
-- the actor subscribes to market/custom data;
-- the actor owns NHSMM runtime state;
-- NHSMM state is published as structured custom data;
-- strategies consume the state output and retain all order, execution, portfolio, and risk policy.
+It carries:
 
-## Canonical temporal input contract
+- 18 coordinates in deterministic order;
+- `instrument_id`;
+- `asof_ts_ns`;
+- `decision_sequence`;
+- `trigger_timeframe`;
+- optional per-timeframe causal provenance.
 
-The reusable adapter carries forward the useful, policy-free parts of the existing `awa-si/nautilus` NHSMM research input contract. The canonical transferred input schema is `nautilus-temporal-observations-v1`, with 18 fixed coordinates in deterministic order plus causal decision/provenance metadata.
+The feature names and signed/unsigned ranges are defined in `contracts.py`.
 
-The adapter owns the reusable representation in `contracts.py`; `awa-si/nautilus@main` remains responsible for producing these values from its TA/Axis pipeline and for freshness/admission policy. Training gates, RSM policy, trading labels, risk and execution data are deliberately not copied into the adapter.
+`awa-si/nautilus` remains responsible for producing/admitting those features from its TA/Axis pipeline, including freshness and trading-side admission policy. Those policies are not duplicated here.
 
-## Initial scope
-
-The current prototype now supports the transferred 18-coordinate temporal contract as the primary model-facing CustomData input to `NHSMMDataActor`. A single ordered `Bar` stream remains available only as a prototype/framework fallback.
-
-Later extensions may cover:
-
-- `TradeTick`;
-- `QuoteTick`;
-- custom feature data;
-- multiple independent streams;
-- optional custom-data persistence.
-
-Feature extraction remains explicit and model-specific. The adapter must not assume that OHLCV is always the model feature vector.
-
-## Timestamp mapping
-
-Draft mapping:
-
-- Nautilus `ts_event` -> NHSMM runtime timestamp;
-- Nautilus `ts_init` -> metadata;
-- one independent NHSMM runtime per ordered stream.
-
-A candidate bar-stream identity is:
+For Nautilus CustomData timing, the admitted observation exposes:
 
 ```text
-(instrument_id, bar_type)
+ts_event = asof_ts_ns
+ts_init  = asof_ts_ns
 ```
+
+The NHSMM runtime receives `asof_ts_ns` as its timestamp.
 
 ## Output contract
 
-The intended Nautilus-facing output is structured `CustomData`, not a trading signal.
+The actor publishes `NHSMMStateData` using schema `nautilus-nhsmm-state-v1`.
 
-Draft payload:
+Current payload fields:
 
 ```python
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class NHSMMStateData:
     instrument_id: str
-    stream_id: str
     state: int | None
     posterior: tuple[float, ...]
     age_posterior: tuple[float, ...] | None
     ts_event: int
     ts_init: int
+    observation_contract: str | None = None
+    decision_sequence: int | None = None
+    trigger_timeframe: str | None = None
+    bar_type: str | None = None
 ```
 
-No `BUY`, `SELL`, `BULL`, or `BEAR` policy belongs in this payload.
+Latent state IDs are opaque. No `BUY`, `SELL`, `BULL`, `BEAR`, sizing, execution, or risk policy belongs in this payload.
+
+## Optional compatibility contracts
+
+`NHSMMArtifactIdentity` is a bridge-level compatibility record only. It is not an artifact loader and does not redefine the NHSMM artifact format.
+
+`NHSMMForecastData` describes optional policy-free forecast channels retained from the former Nautilus research boundary. The current DataActor does not publish forecast data yet.
+
+## Bar fallback
+
+`NautilusBarAdapter` remains available as a limited framework/prototype fallback for one ordered Bar stream and explicit OHLCV field selection. It is not the canonical model-facing input path.
+
+## Lifecycle
+
+Current actor behavior:
+
+- `on_start`: subscribe to temporal CustomData and optional Bar input;
+- `on_stop`: unsubscribe;
+- `on_reset`: call `runtime.reset()`;
+- `on_data`: consume `TemporalObservationData` and publish `NHSMMStateData`;
+- `on_bar`: optional fallback path.
+
+One mutable NHSMM runtime must receive one ordered callback sequence. Do not call `step()` concurrently on the same runtime or share one runtime across independent streams without an explicit batching design.
 
 ## Dependency boundary
 
-NautilusTrader should remain an optional integration dependency.
-
-Generic imports must continue to work without NautilusTrader installed:
+NautilusTrader is an integration dependency only for this package. Generic imports remain Nautilus-independent:
 
 - `adapters/base.py`
 - `adapters/nhsmm.py`
 - `adapters/research.py`
 
-All Nautilus-specific NHSMM integration implementation belongs under this directory. Downstream projects should import the public adapter/actor/config objects rather than subclassing or duplicating the bridge unless an explicitly unsupported extension requires it.
+Importing `adapters.nautilus` requires NautilusTrader.
 
-## Development reference
+## Development sources
 
-Development and integration verification are anchored to [`awa-si/nautilus@main`](https://github.com/awa-si/nautilus). That repository is the canonical consumer reference for how the adapter must plug into the AWA Nautilus stack. The upstream [`nautechsystems/nautilus_trader`](https://github.com/nautechsystems/nautilus_trader) project remains the authority for NautilusTrader framework API semantics and version compatibility.
+- Consumer/integration reference: `awa-si/nautilus@main`
+- Framework API authority: `nautechsystems/nautilus_trader`
+- NHSMM model/runtime authority: `awa-si/nhsmm`
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the reviewed Nautilus API surface, draft lifecycle mapping, open questions, and implementation sequence.
+The currently verified installable Nautilus v2 pre-release is `2.0.0rc5`. Re-verify the concrete DataActor API when moving to a newer pre-release.
 
-Bridge-level compatibility data also includes opaque NHSMM state semantics, optional policy-free forecast channels (`next_state_prior`, episode/state-change probabilities, survival/end-within by explicit horizons), and artifact compatibility identity (`artifact_id`, observation contract, feature/state/duration dimensions). These describe integration data only and do not duplicate model or evaluation logic.
+## Remaining hardening
+
+Production stabilization still needs:
+
+- verification against the targeted Nautilus release when rc6 is installable;
+- warm-up/history policy;
+- artifact bootstrap/identity wiring;
+- optional forecast publication;
+- persistence/catalog serialization if required;
+- multi-stream runtime ownership;
+- backtest/live lifecycle integration tests.

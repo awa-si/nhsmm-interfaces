@@ -135,3 +135,92 @@ def test_actor_reset_delegates_to_runtime():
     actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
     actor.on_reset()
     assert runtime.reset_calls == 1
+
+
+def test_actor_lifecycle_subscribes_and_unsubscribes_temporal_data():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    calls = []
+    actor.subscribe_data = lambda data_type: calls.append(("subscribe", data_type))
+    actor.unsubscribe_data = lambda data_type: calls.append(("unsubscribe", data_type))
+
+    actor.on_start()
+    actor.on_stop()
+
+    assert calls == [
+        ("subscribe", TEMPORAL_OBSERVATION_DATA_TYPE),
+        ("unsubscribe", TEMPORAL_OBSERVATION_DATA_TYPE),
+    ]
+
+
+def test_actor_ignores_unrelated_custom_data():
+    from nautilus_trader.model import DataType
+
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    called = []
+    actor.temporal_adapter.step = lambda event: called.append(event)
+
+    payload = TemporalObservationData(
+        instrument_id="BTCUSDT.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=123,
+        decision_sequence=7,
+        trigger_timeframe="5m",
+    )
+    other_type = DataType("OtherData", metadata={"schema": "other-v1"})
+    actor.on_data(CustomData(other_type, payload))
+
+    assert called == []
+
+
+def test_actor_rejects_wrong_temporal_payload_type():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+
+    class WrongPayload:
+        ts_event = 123
+        ts_init = 123
+
+    with pytest.raises(TypeError, match="TemporalObservationData"):
+        actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, WrongPayload()))
+
+
+def test_actor_does_not_publish_after_inference_failure():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    payload = TemporalObservationData(
+        instrument_id="BTCUSDT.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=123,
+        decision_sequence=7,
+        trigger_timeframe="5m",
+    )
+    actor.temporal_adapter.step = lambda event: (_ for _ in ()).throw(RuntimeError("boom"))
+    published = []
+    actor.publish_data = lambda data_type, data: published.append((data_type, data))
+
+    with pytest.raises(RuntimeError, match="boom"):
+        actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, payload))
+
+    assert published == []
+
+
+def test_temporal_observation_rejects_future_provenance():
+    with pytest.raises(ValueError, match="future timeframe provenance"):
+        TemporalObservationData(
+            instrument_id="BTCUSDT.BINANCE",
+            values=_temporal_values(),
+            asof_ts_ns=123,
+            decision_sequence=7,
+            trigger_timeframe="5m",
+            provenance=(TimeframeProvenance("5m", 124, 124, 7),),
+        )
+
+
+def test_actor_config_rejects_no_input_path():
+    with pytest.raises(ValueError, match="must enable temporal input"):
+        NHSMMDataActorConfig(
+            consume_temporal_observations=False,
+            bar_type=None,
+        )

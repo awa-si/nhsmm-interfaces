@@ -169,13 +169,19 @@ Committed Nautilus bridge tests currently cover:
 - CustomData timestamp exposure;
 - native DataActorConfig field preservation;
 - TemporalObservationData -> NHSMMStateData publication;
-- runtime reset delegation.
+- runtime reset delegation;
+- temporal subscribe/unsubscribe lifecycle;
+- unrelated CustomData isolation;
+- wrong temporal payload rejection;
+- fail-closed inference errors with no stale publication;
+- future-provenance rejection;
+- invalid no-input actor configuration.
 
 These are framework-hook tests. End-to-end tests with a real NHSMM artifact/runtime and Nautilus backtest/live engine remain production-hardening work.
 
 ## Remaining work
 
-1. Verify against the latest available NautilusTrader v2 pre-release.
+1. Re-verify against the latest available NautilusTrader v2 pre-release whenever the resolved pre-release changes.
 2. Define warm-up/history behavior.
 3. Wire artifact identity/bootstrap without duplicating NHSMM artifact semantics.
 4. Decide whether forecast publication is required by consumers.

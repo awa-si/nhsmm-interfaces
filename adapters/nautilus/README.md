@@ -133,7 +133,7 @@ Target and verify against the latest available NautilusTrader v2 pre-release. Re
 
 Production stabilization still needs:
 
-- verification against the latest available NautilusTrader v2 pre-release;
+- continued verification against the latest available NautilusTrader v2 pre-release whenever it changes;
 - warm-up/history policy;
 - artifact bootstrap/identity wiring;
 - optional forecast publication;

@@ -162,6 +162,135 @@ NHSMM external context remains optional and is not silently inferred from Nautil
 
 Any context mapping must be explicit, deterministic, and part of the model/interface contract.
 
+## Deployment / consumer integration
+
+The bridge is currently deployed from source; this repository does not yet define a standalone Python package manifest. A consumer such as `awa-si/nautilus` should make the `nhsmm-interfaces` checkout/import root available on `PYTHONPATH` (or vendor it into the same workspace) and install compatible `nhsmm`, PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
+
+### 1. Install runtime dependencies
+
+Use the consumer environment's normal dependency mechanism. For a direct development checkout:
+
+```bash
+python -m pip install -U --pre nautilus_trader
+python -m pip install -U torch
+# install awa-si/nhsmm by the consumer's normal source/package workflow
+```
+
+Before deployment, verify which NautilusTrader pre-release actually resolves:
+
+```bash
+python - <<'PY'
+import nautilus_trader
+print(nautilus_trader.__version__)
+PY
+```
+
+Re-run the bridge tests whenever that resolved pre-release changes.
+
+### 2. Expose the interface checkout
+
+Until packaging is added, the consumer must expose this repository directly:
+
+```bash
+export PYTHONPATH="/path/to/nhsmm-interfaces:$PYTHONPATH"
+```
+
+Do not copy the Nautilus bridge implementation into the consumer repository.
+
+### 3. Build/load the NHSMM runtime in bootstrap code
+
+Artifact loading remains outside this adapter. The application/bootstrap layer must construct a public `HSMMFilterRuntime` using the canonical `awa-si/nhsmm` API, then inject that runtime into the actor:
+
+```python
+from adapters.nautilus import NHSMMDataActor, NHSMMDataActorConfig
+
+runtime = ...  # construct/load through public awa-si/nhsmm APIs
+
+config = NHSMMDataActorConfig(
+    consume_temporal_observations=True,
+)
+
+actor = NHSMMDataActor(config, runtime)
+```
+
+Do not duplicate NHSMM artifact parsing or model semantics inside the Nautilus consumer.
+
+### 4. Register the actor with the Nautilus application
+
+Register the constructed `NHSMMDataActor` through the consumer's current Nautilus component/bootstrap registration path before replay/live execution starts.
+
+The exact registration call is Nautilus-version-sensitive and must be verified against the resolved pre-release and the current `awa-si/nautilus` bootstrap. The bridge contract itself does not own engine construction.
+
+Required ordering:
+
+```text
+construct/load NHSMM runtime
+        ->
+construct NHSMMDataActor
+        ->
+register actor with Nautilus application
+        ->
+start engine/replay/live node
+```
+
+### 5. Publish admitted temporal observations
+
+The Nautilus consumer produces `TemporalObservationData` only after its own feature freshness/admission checks pass:
+
+```python
+from adapters.nautilus import (
+    TEMPORAL_OBSERVATION_DATA_TYPE,
+    TemporalObservationData,
+    TimeframeProvenance,
+)
+from nautilus_trader.model import CustomData
+
+payload = TemporalObservationData(
+    instrument_id="BTCUSDT.BINANCE",
+    values=temporal_values,  # exactly 18 values in canonical order
+    asof_ts_ns=decision_ts_ns,
+    decision_sequence=decision_sequence,
+    trigger_timeframe="5m",
+    provenance=(
+        TimeframeProvenance(
+            timeframe="5m",
+            source_ts_event_ns=source_ts_event_ns,
+            source_ts_init_ns=source_ts_init_ns,
+            processed_sequence=decision_sequence,
+        ),
+    ),
+)
+
+custom = CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, payload)
+```
+
+Publish/inject that `CustomData` through the consumer's existing Nautilus data path. The actor subscribes to `TEMPORAL_OBSERVATION_DATA_TYPE` on `on_start`.
+
+### 6. Consume NHSMM state
+
+Strategies or other actors subscribe to `NHSMM_STATE_DATA_TYPE` and consume `NHSMMStateData`.
+
+Consumer code may use the posterior/age/decision metadata, but must keep trading/risk interpretation outside the bridge.
+
+### 7. Deployment checks
+
+Run at minimum:
+
+```bash
+PYTHONPATH=. python -m pytest -q tests/test_nautilus_adapter.py
+python -m py_compile adapters/nautilus/*.py
+```
+
+Before promoting a consumer deployment, additionally verify:
+
+- the resolved NautilusTrader pre-release and PyO3 constructor behavior;
+- actor registration succeeds in the actual backtest/live bootstrap;
+- one ordered runtime is used per independent stream;
+- no stale state is emitted after inference failure;
+- replay/live timestamps remain causal;
+- the consumer's 18-value feature order exactly matches `TEMPORAL_OBSERVATION_NAMES`.
+
+
 ## Tests
 
 Committed Nautilus bridge tests currently cover:

@@ -156,6 +156,7 @@ Legacy/domain work may exist elsewhere in the repository while it is migrated to
 ## Documentation
 
 - [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and ResearchAdapter usage.
+- [NautilusTrader interface draft](docs/nautilus-draft.md) — Actor-first Nautilus integration design; draft only.
 - [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.
 
 ## Status

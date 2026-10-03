@@ -2,11 +2,11 @@
 
 > Status: **draft / not implemented**.
 
-This directory is the canonical home for the NautilusTrader integration.
+This directory is the canonical and implementation-owning home for the NautilusTrader integration.
 
 ## Purpose
 
-The Nautilus adapter connects NautilusTrader market/data components to the public NHSMM runtime without embedding trading decisions in the adapter layer.
+The Nautilus adapter connects NautilusTrader market/data components to the public NHSMM runtime without embedding trading decisions in the adapter layer. The integration is implemented here; Nautilus application repositories should not need their own NHSMM bridge classes.
 
 Target architecture:
 
@@ -28,6 +28,12 @@ NHSMMStateData (CustomData)
         v
 Nautilus Strategy / Actor consumers
 ```
+
+Ownership rule:
+
+- `nhsmm-interfaces/adapters/nautilus` owns the Nautilus↔NHSMM integration;
+- downstream Nautilus projects own only configuration, composition, strategy policy, execution, and risk;
+- adapter fixes/versioning happen here once and are reused by all Nautilus consumers.
 
 The current design is **DataActor-first**:
 
@@ -94,7 +100,7 @@ Generic imports must continue to work without NautilusTrader installed:
 - `adapters/nhsmm.py`
 - `adapters/research.py`
 
-Any Nautilus implementation belongs under this directory.
+All Nautilus-specific NHSMM integration implementation belongs under this directory. Downstream projects should import the public adapter/actor/config objects rather than subclassing or duplicating the bridge unless an explicitly unsupported extension requires it.
 
 ## Development
 

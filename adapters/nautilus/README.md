@@ -1,6 +1,6 @@
 # NautilusTrader adapter
 
-> Status: **draft / not implemented**.
+> Status: **prototype implemented; integration not yet production-stable**.
 
 This directory is the canonical and implementation-owning home for the NautilusTrader integration. Adapter development uses `awa-si/nautilus@main` as the canonical consumer/integration reference for real repository lifecycle, configuration, data-flow, replay, and strategy-consumption patterns.
 
@@ -42,9 +42,15 @@ The current design is **DataActor-first**:
 - NHSMM state is published as structured custom data;
 - strategies consume the state output and retain all order, execution, portfolio, and risk policy.
 
+## Canonical temporal input contract
+
+The reusable adapter carries forward the useful, policy-free parts of the existing `awa-si/nautilus` NHSMM research input contract. The canonical transferred input schema is `nautilus-temporal-observations-v1`, with 18 fixed coordinates in deterministic order plus causal decision/provenance metadata.
+
+The adapter owns the reusable representation in `contracts.py`; `awa-si/nautilus@main` remains responsible for producing these values from its TA/Axis pipeline and for freshness/admission policy. Training gates, RSM policy, trading labels, risk and execution data are deliberately not copied into the adapter.
+
 ## Initial scope
 
-The first implementation target is a single ordered `Bar` stream.
+The current prototype implements a single ordered `Bar` stream for framework-hook validation. The transferred 18-coordinate temporal contract is the intended model-facing input boundary for the real integration; wiring that contract into the actor is the next implementation step.
 
 Later extensions may cover:
 

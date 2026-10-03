@@ -1,6 +1,6 @@
 # NautilusTrader adapter development
 
-> Status: **draft**. This file tracks design and implementation decisions. The public-facing adapter overview lives in [README.md](README.md).
+> Status: **prototype**. The Bar/DataActor framework hook and transferred temporal input contract exist; artifact loading, warm-up, temporal-input actor wiring, persistence, and live integration remain unstabilized. The public-facing adapter overview lives in [README.md](README.md).
 
 Development references:
 
@@ -47,6 +47,12 @@ NautilusTrader separates data actors from strategies:
 NHSMM filtering is stateful inference, not order management. Therefore the initial interface should target a dedicated `DataActor` rather than embed NHSMM directly in `Strategy`.
 
 A strategy should not own a separate NHSMM adapter implementation. It may instantiate/configure the adapter-owned actor/component for experiments, but reusable integration code remains in this repository.
+
+## Transferred consumer contract
+
+The first reusable data contract has been extracted from `awa-si/nautilus@main` rather than reimplemented from memory. `adapters/nautilus/contracts.py` carries the fixed `nautilus-temporal-observations-v1` 18-coordinate schema, signed/unsigned ranges, and causal provenance fields required to transport an admitted temporal observation into NHSMM.
+
+The transfer intentionally excludes Nautilus-owned freshness thresholds, TA/Axis feature construction, RSM hazard policy, H1-H4 semantics, trading policy, and the frozen local NHSMM research implementation. Those are not adapter responsibilities.
 
 ## Nautilus inputs
 
@@ -295,9 +301,9 @@ Context construction must be configured and deterministic.
 
 Do not silently use account, position, PnL, or order state as NHSMM context. If such inputs are desired, they must be an explicit model/interface decision because doing so couples model inference to strategy/account state.
 
-## Proposed draft API
+## Prototype API
 
-No implementation yet. Proposed names:
+The current prototype implements:
 
 ```python
 NautilusAdapterConfig

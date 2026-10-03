@@ -166,6 +166,8 @@ Any context mapping must be explicit, deterministic, and part of the model/inter
 
 The bridge is currently deployed from source; this repository does not yet define a standalone Python package manifest. A consumer such as `awa-si/nautilus` should make the `nhsmm-interfaces` checkout/import root available on `PYTHONPATH` (or vendor it into the same workspace) and install compatible `nhsmm`, PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
 
+This source/PYTHONPATH deployment is transitional. The planned distribution model is a dedicated wheel release named `nhsmm-[nautilus]`, so consumers can later install the Nautilus bridge as a packaged dependency instead of wiring the repository checkout directly.
+
 ### 1. Install runtime dependencies
 
 Use the consumer environment's normal dependency mechanism. For a direct development checkout:

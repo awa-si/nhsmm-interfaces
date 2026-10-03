@@ -2,15 +2,15 @@
 
 Integration contracts and adapters for [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
 
-This repository keeps host/framework integration outside the NHSMM core package. It defines canonical input/output contracts and thin adapters that translate external systems into the public NHSMM runtime API.
+This repository owns host/framework integration for NHSMM. It defines canonical contracts and the concrete integration layer for supported external systems, so downstream projects configure and instantiate adapters instead of implementing their own NHSMM bridges.
 
 ## Architecture
 
 ```text
-host / domain system
+external host / domain system
         |
         v
-host or domain adapter
+adapter owned by nhsmm-interfaces
         |
         v
 Observation + optional Context
@@ -63,12 +63,12 @@ event
   -> from_state(state)
 ```
 
-Concrete adapters should translate data and lifecycle only. Domain decisions remain outside the adapter layer.
+Concrete adapters are implemented and maintained in this repository. External projects should consume these adapters through their public configuration/lifecycle surface rather than recreate framework-specific NHSMM integration. Domain decisions remain outside the adapter layer.
 
 Examples:
 
-- Nautilus Trader: market/bar/event mapping into NHSMM observations/context;
-- Freqtrade: row/callback mapping into the same canonical contracts;
+- Nautilus Trader: integration implemented under `adapters/nautilus/`;
+- Freqtrade: integration should be implemented under `adapters/freqtrade/`;
 - research/healthcare workflows: structured worker/API payloads through `ResearchAdapter`;
 - other event-driven systems: subclass `NHSMMRuntimeAdapter` or `UniversalAdapter` as appropriate.
 
@@ -104,6 +104,8 @@ It does not parse raw documents, perform OCR, impute data, infer domain meaning,
 
 Belongs here:
 
+- concrete framework integration packages;
+- framework lifecycle wiring;
 - host-object or event mapping;
 - deterministic feature ordering;
 - optional external-context mapping;
@@ -111,6 +113,8 @@ Belongs here:
 - conversion to/from canonical contracts;
 - runtime lifecycle integration;
 - domain-neutral validation of adapter inputs.
+
+External projects should not own duplicate NHSMM integration code. They should provide configuration, strategy/domain policy, and application composition around adapters from this repository.
 
 Does not belong here:
 

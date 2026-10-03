@@ -127,13 +127,13 @@ Importing `adapters.nautilus` requires NautilusTrader.
 - Framework API authority: `nautechsystems/nautilus_trader`
 - NHSMM model/runtime authority: `awa-si/nhsmm`
 
-The currently verified installable Nautilus v2 pre-release is `2.0.0rc5`. Re-verify the concrete DataActor API when moving to a newer pre-release.
+Target and verify against the latest available NautilusTrader v2 pre-release. Re-verify the concrete DataActor/PyO3 API whenever that pre-release changes.
 
 ## Remaining hardening
 
 Production stabilization still needs:
 
-- verification against the targeted Nautilus release when rc6 is installable;
+- verification against the latest available NautilusTrader v2 pre-release;
 - warm-up/history policy;
 - artifact bootstrap/identity wiring;
 - optional forecast publication;

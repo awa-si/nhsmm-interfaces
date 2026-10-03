@@ -175,7 +175,7 @@ These are framework-hook tests. End-to-end tests with a real NHSMM artifact/runt
 
 ## Remaining work
 
-1. Verify against the targeted Nautilus release once rc6 is installable.
+1. Verify against the latest available NautilusTrader v2 pre-release.
 2. Define warm-up/history behavior.
 3. Wire artifact identity/bootstrap without duplicating NHSMM artifact semantics.
 4. Decide whether forecast publication is required by consumers.

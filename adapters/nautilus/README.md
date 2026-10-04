@@ -41,7 +41,7 @@ The design is DataActor-first because NHSMM filtering is stateful data processin
 
 Current `awa-si/nautilus@main` publishes neutral causal `AxisObservation` values as Nautilus `CustomData` using schema `axis-observation-v2`. `AxisObservationCollector` subscribes to that DataType directly and preserves selected source payloads unchanged for replay/training orchestration. It defaults to the 5m decision boundary and enforces strictly increasing `asof_ts_ns` and `decision_sequence` per instrument.
 
-The collector does not import Nautilus consumer model classes, does not depend on the ML `FeatureSnapshot` path, and does not derive NHSMM features. A direct Axis→NHSMM feature mapping remains prohibited until an explicit versioned cross-repository contract is defined.
+The collector does not import Nautilus consumer model classes and does not depend on the ML `FeatureSnapshot` path. The explicit `AxisTemporalMapper` contract `axis-observation-v2-to-nautilus-temporal-observations-v1` maps stable `AxisState` primitives into the existing 18-coordinate temporal model contract. The mapping identity is carried on every produced `TemporalObservationData` value and walk-forward construction rejects mixed mapping identities.
 
 A Nautilus replay can attach the collector through the runner's existing actor boundary:
 
@@ -56,6 +56,19 @@ observations = collector.observations
 ```
 
 No hook/callback infrastructure is required in the Nautilus consumer repository.
+
+## Axis→temporal mapping
+
+The current explicit mapping is fixed by `AXIS_TEMPORAL_MAPPING_FIELDS` and uses only stable Axis primitives:
+
+```text
+1h:  direction, efficiency, persistence, volatility, compression, activity
+15m: direction, efficiency, persistence, volatility, compression, activity, participation, flow
+5m:  direction, volatility_accel, activity_accel
+1m:  shock
+```
+
+`AxisTemporalDataActor` can subscribe directly to `AxisObservation` CustomData and republish mapped `TemporalObservationData` CustomData. This bridge contains no ML admission, prediction, signal, risk, or execution logic.
 
 ## Model input contract
 

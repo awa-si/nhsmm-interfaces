@@ -8,6 +8,7 @@ from nautilus_trader.model import CustomData, DataType
 
 AXIS_OBSERVATION_SCHEMA = "axis-observation-v2"
 AXIS_OBSERVATION_DATA_TYPE_NAME = "AxisObservation"
+AXIS_OBSERVATION_TFS = ("1m", "5m", "15m", "1h")
 AXIS_OBSERVATION_DATA_TYPE = DataType(
     AXIS_OBSERVATION_DATA_TYPE_NAME,
     metadata={"schema": AXIS_OBSERVATION_SCHEMA},
@@ -106,6 +107,34 @@ class AxisObservationCollector(DataActor):
             raise ValueError("axis observation identity must be non-negative")
         if ts_event > ts_init or ts_init > asof:
             raise ValueError("axis observation timestamps are not causally ordered")
-        if not str(observation.trigger_timeframe):
-            raise ValueError("axis observation trigger_timeframe must be non-empty")
+        trigger_timeframe = str(observation.trigger_timeframe)
+        if trigger_timeframe not in AXIS_OBSERVATION_TFS:
+            raise ValueError("invalid axis observation trigger_timeframe")
+
+        if tuple(observation.axis_by_tf) != AXIS_OBSERVATION_TFS:
+            raise ValueError("axis observation requires canonical timeframe ordering")
+        if tuple(observation.provenance_by_tf) != AXIS_OBSERVATION_TFS:
+            raise ValueError("axis observation provenance requires canonical timeframe ordering")
+
+        for timeframe in AXIS_OBSERVATION_TFS:
+            source = observation.provenance_by_tf[timeframe]
+            required_source = (
+                "source_ts_event_ns",
+                "source_ts_init_ns",
+                "processed_sequence",
+            )
+            if any(not hasattr(source, name) for name in required_source):
+                raise TypeError(f"invalid axis observation provenance: {timeframe}")
+            available = max(int(source.source_ts_event_ns), int(source.source_ts_init_ns))
+            processed = int(source.processed_sequence)
+            if available > asof or processed > sequence:
+                raise ValueError(f"axis observation contains unavailable state: {timeframe}")
+
+        trigger = observation.provenance_by_tf[trigger_timeframe]
+        if (
+            int(trigger.source_ts_event_ns) != ts_event
+            or int(trigger.source_ts_init_ns) != ts_init
+            or int(trigger.processed_sequence) != sequence
+        ):
+            raise ValueError("axis observation trigger provenance mismatch")
         return asof, sequence

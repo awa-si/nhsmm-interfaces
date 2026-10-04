@@ -1,0 +1,54 @@
+name: Interface / integration proposal
+description: Propose a concrete adapter, orchestration, or compatibility improvement.
+title: "[proposal] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals should preserve repository boundaries: model semantics stay in `awa-si/nhsmm`; downstream decision policy stays outside this repository.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Generic adapter/runtime
+        - Walk-forward evaluator/tuning
+        - Structured event adapter
+        - NautilusTrader adapter
+        - New framework adapter
+        - Documentation/community
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / integration gap
+      description: Describe the concrete limitation or duplicated integration work this would solve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed contract
+      description: Describe inputs, outputs, lifecycle, ordering, compatibility, or ownership changes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Boundary check
+      description: Explain why this belongs in `nhsmm-interfaces` rather than core NHSMM or a downstream application.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Suggested verification
+      description: Describe tests, replay checks, or compatibility evidence that should accompany the change.

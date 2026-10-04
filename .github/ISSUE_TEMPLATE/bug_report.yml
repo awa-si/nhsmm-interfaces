@@ -1,0 +1,92 @@
+name: Bug report
+description: Report a reproducible adapter, evaluator, lifecycle, or integration defect.
+title: "[bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide a minimal reproduction. For security-sensitive issues, follow `.github/SECURITY.md` instead of filing a public issue.
+
+  - type: input
+    id: commit
+    attributes:
+      label: nhsmm-interfaces commit
+      description: Commit SHA or branch containing the issue.
+      placeholder: "commit SHA / dev"
+    validations:
+      required: true
+
+  - type: input
+    id: core
+    attributes:
+      label: NHSMM core version or commit
+      description: Installed `nhsmm` version, tag, or commit SHA.
+      placeholder: "0.x.y / v0.x.y / commit SHA"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, operating system, framework version, and relevant device/runtime details.
+      placeholder: "Python 3.12, Ubuntu, torch 2.x, NautilusTrader ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Generic adapter/runtime
+        - Walk-forward evaluator/tuning
+        - Structured event adapter
+        - NautilusTrader adapter
+        - Documentation/community
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the smallest code or commands that reproduce the issue.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the full exception or relevant output when possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Feature ordering, timestamps, fold boundaries, runtime lifecycle, framework objects, or other relevant details.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked whether this issue belongs to `awa-si/nhsmm`, this repository, the external framework, or my downstream application.
+          required: true
+        - label: I checked the current README and relevant documentation.
+          required: true
+        - label: This report does not contain an unpatched security vulnerability.
+          required: true

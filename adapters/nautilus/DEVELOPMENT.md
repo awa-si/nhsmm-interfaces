@@ -13,7 +13,16 @@ Do not infer NHSMM model semantics from this adapter and do not place Nautilus i
 ## Implemented integration
 
 ```text
-TemporalObservationData
+AxisObservation (CustomData)
+        |
+        v
+AxisTemporalDataActor
+        |
+        v
+AxisTemporalMapper
+        |
+        v
+TemporalObservationData (CustomData)
         |
         v
 NHSMMDataActor.on_data
@@ -42,9 +51,11 @@ The optional Bar path remains a limited framework fallback.
 
 The builder rejects non-monotonic timestamps or decision sequences, mixed instruments, trigger-provenance mismatches, and empty train/OOS selections. It does not construct market features, labels, context, or trading objectives.
 
-The current `awa-si/nautilus@main` production/research baseline uses a separate causal 76-coordinate `raw_4tf` contract. That contract is not equivalent to `nautilus-temporal-observations-v1`; no implicit 76→18 mapping is permitted. A future Nautilus→NHSMM producer requires an explicit versioned cross-repository mapping contract.
+The current Nautilus→NHSMM producer path is explicit: `AxisObservation v2` maps to `nautilus-temporal-observations-v1` through `AxisTemporalMapper` under mapping contract `axis-observation-v2-to-nautilus-temporal-observations-v1`. The supervised `raw_4tf` 76-coordinate ML contract remains separate and is not converted or consumed here.
 
 ## Input ownership
+
+`awa-si/nautilus@main` owns and publishes `AxisObservation v2`. `nhsmm-interfaces` owns the explicit Axis→temporal mapping and the downstream temporal/NHSMM lifecycle.
 
 The transferred `nautilus-temporal-observations-v1` contract contains the reusable, policy-free data required at the adapter boundary:
 
@@ -87,14 +98,7 @@ The actor:
 
 Nautilus v2 `DataActor` and `DataActorConfig` are PyO3 types.
 
-For `DataActor`, the native constructor must receive only config:
-
-```python
-def __new__(cls, config, runtime):
-    return super().__new__(cls, config)
-```
-
-The injected runtime remains Python-owned state.
+For `DataActor`, PyO3 consumes constructor arguments in `__new__`. Subclasses with Python-only constructor arguments must therefore shield those arguments from the native constructor. `NHSMMDataActor` forwards only its config; `AxisObservationCollector` and `AxisTemporalDataActor` call `super().__new__(cls)` and retain their Python-owned fields in `__init__`.
 
 For `DataActorConfig`, native fields such as `actor_id`, `log_events`, and `log_commands` are consumed by the native `__new__` before the Python subclass `__init__` executes. The subclass therefore calls `super().__init__()` and stores only its custom fields.
 

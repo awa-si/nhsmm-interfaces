@@ -1,38 +1,15 @@
 # Funding & Support
 
-This project is developed and maintained as **open-source research and infrastructure**.
+`nhsmm-interfaces` is open-source integration infrastructure for the NHSMM ecosystem.
 
-If you find **NHSMM** useful in your work or research, you can support its continued development through the following channels:
+Support helps maintain:
 
-## Funding Channels
+- framework adapters and lifecycle integration;
+- compatibility with the public `nhsmm` core API;
+- walk-forward evaluation/orchestration interfaces;
+- tests, documentation, and release infrastructure;
+- reproducible integration examples.
 
-- **GitHub Sponsors**  
-  Supports direct development, maintenance, issue resolution, and core feature work.
+Funding channels may include GitHub Sponsors, Patreon, Open Collective, and technical publishing channels maintained by the project owner.
 
-- **Patreon**  
-  Funds recurring, in-depth technical writing, research notes, and domain-specific deep dives  
-  (Trading, IoT, Health), as well as early access to experimental ideas.
-
-- **Open Collective**  
-  Provides transparent, auditable funding for sustainable open-source development,  
-  documentation, infrastructure costs, and long-term research initiatives.
-
-- **Medium**  
-  Supports public-facing technical articles, educational content, and knowledge sharing.
-
-## What Your Support Enables
-
-Contributions help fund:
-
-- Core library development and maintenance  
-- Documentation, examples, and educational material  
-- Research into advanced sequence modeling (HSMMs, neural extensions)  
-- Cross-domain applications (finance, IoT, health)  
-- Exploration of future-ready architectures, including accelerator- and quantum-driven approaches  
-
-## Sustainability
-
-Support from individuals and organizations ensures the **long-term sustainability** of open,  
-reproducible, and domain-agnostic temporal modeling tools.
-
-Thank you for supporting open research and open-source software.
+Funding does not change the repository's technical boundaries: model semantics remain in `awa-si/nhsmm`, while domain strategy, risk, portfolio, execution, and application policy remain outside this repository.

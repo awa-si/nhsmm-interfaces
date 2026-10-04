@@ -1,169 +1,103 @@
 # NHSMM Interfaces
 
-Integration contracts and adapters for [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
+Integration, runtime-adapter, and walk-forward evaluation layer for [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
 
-This repository owns host/framework integration for NHSMM. It defines canonical contracts and the concrete integration layer for supported external systems, so downstream projects configure and instantiate adapters instead of implementing their own NHSMM integrations.
+This repository owns the boundary between the public NHSMM core API and external hosts/frameworks. It does not reimplement model internals or downstream decision policy.
 
-## Architecture
+## Ownership
 
-```text
-external host / domain system
-        |
-        +-----------------------------+
-        |                             |
-        v                             v
-streaming adapter              walk-forward evaluator
-        |                             |
-        v                             v
-Observation + optional Context   validated NHSMM configs
-        |                             |
-        v                             v
-NHSMMRuntimeAdapter             fresh train -> OOS fits
-        |
-        v
-nhsmm.HSMMFilterRuntime
-        |
-        v
-StateEstimate
-        |
-        v
-downstream application
-```
+`awa-si/nhsmm` owns:
 
-The core model, training, filtering, forecasting, and artifact semantics remain in [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
+- model and optimizer implementation;
+- configuration and tuning primitives;
+- artifact/inference semantics;
+- filtering and forecasting;
+- model-health and validation snapshots.
 
-## Public adapter API
+`awa-si/nhsmm-interfaces` owns:
+
+- canonical host-facing contracts;
+- runtime adapters and lifecycle wiring;
+- framework-specific mappings;
+- walk-forward fit/evaluate orchestration over the public core API.
+
+Downstream applications own:
+
+- feature/domain policy;
+- trading signals and objectives;
+- portfolio/risk policy;
+- execution and business logic.
+
+## Public API
+
+Runtime contracts:
 
 ```python
 from adapters import (
+    Adapter,
     Context,
     NHSMMRuntimeAdapter,
-    NHSMMTunerEvaluator,
     Observation,
-    StructuredEventAdapter,
     StateEstimate,
-    Adapter,
+    StructuredEventAdapter,
 )
 ```
 
-### Core contracts
-
-- `Observation` — one ordered model feature vector with optional timestamp, instrument, and metadata.
-- `Context` — optional external context vector plus metadata.
-- `StateEstimate` — most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata.
-- `Adapter` — minimal runtime-neutral event adapter pipeline.
-- `NHSMMRuntimeAdapter` — adapter for the public `nhsmm.HSMMFilterRuntime`.
-- `NHSMMTunerEvaluator` — domain-neutral train→OOS walk-forward evaluator for core `ConfigTuner`.
-- `WalkForwardFold` — explicit temporal train/OOS split contract.
-- `StructuredEventAdapter` — schema-driven adapter for structured event mappings.
-
-## Canonical streaming path
-
-```text
-event
-  -> to_observation(event)
-  -> to_context(event)
-  -> infer(observation, context)
-  -> StateEstimate
-  -> from_state(state)
-```
-
-Concrete adapters are implemented and maintained in this repository. External projects should consume these adapters through their public configuration/lifecycle surface rather than recreate framework-specific NHSMM integration. Domain decisions remain outside the adapter layer.
-
-Examples:
-
-- Nautilus Trader: integration implemented under `adapters/nautilus/`;
-- Freqtrade: integration should be implemented under `adapters/freqtrade/`;
-- structured workflows: mapped event payloads through `StructuredEventAdapter`;
-- other event-driven systems: subclass `NHSMMRuntimeAdapter` or `Adapter` as appropriate.
-
-## StructuredEventAdapter
-
-`StructuredEventAdapter` expects upstream processing to provide explicit numerical `features` and, when external context is used, numerical `context`.
+Walk-forward evaluation:
 
 ```python
-adapter = StructuredEventAdapter(
-    runtime,
-    feature_fields=("feature_a", "feature_b"),
-    context_fields=("priority",),
+from adapters import (
+    NHSMMFoldEvaluation,
+    NHSMMTunerEvaluator,
+    NHSMMTunerEvaluatorConfig,
+    NHSMMTuningEvaluationReport,
+    NHSMMTuningScoreConfig,
+    WalkForwardFold,
 )
-
-state = adapter.step({
-    "timestamp": 123,
-    "event_type": "processed",
-    "features": {
-        "feature_a": 0.7,
-        "feature_b": 0.9,
-    },
-    "context": {
-        "priority": 2.0,
-    },
-})
 ```
 
-It validates declared feature/context fields and preserves only explicitly configured `metadata_fields`. It does not infer domain meaning or make application decisions.
+## Runtime path
 
-## Design boundaries
+```text
+host event
+  -> host/framework adapter
+  -> Observation + optional Context
+  -> NHSMMRuntimeAdapter
+  -> nhsmm.HSMMFilterRuntime
+  -> StateEstimate
+  -> downstream consumer
+```
 
-Belongs here:
+`HSMMFilterRuntime` is stateful. Preserve event ordering, keep context mode consistent within a session, reset explicitly at stream boundaries, and use independent runtime state for independent streams unless batching is intentionally designed.
 
-- concrete framework integration packages;
-- framework lifecycle wiring;
-- host-object or event mapping;
-- deterministic feature ordering;
-- optional external-context mapping;
-- timestamp/instrument normalization;
-- conversion to/from canonical contracts;
-- runtime lifecycle integration;
-- domain-neutral validation of adapter inputs.
+## Walk-forward path
 
-External projects should not own duplicate NHSMM integration code. They should provide configuration, strategy/domain policy, and application composition around adapters from this repository.
+```text
+chronological host/model-ready data
+  -> WalkForwardFold(s)
+  -> NHSMMTunerEvaluator
+  -> fresh NHSMM fit per fold
+  -> train/OOS ValidationSnapshot
+  -> ValidationComparison
+  -> TuneEvaluation
+  -> nhsmm.ConfigTuner
+```
 
-Does not belong here:
-
-- NHSMM model/optimizer implementation;
-- trading-specific training objectives or model-selection policy;
-- trading strategy, execution, portfolio, or risk policy;
-- medical diagnosis, treatment recommendations, or autonomous eligibility decisions;
-- raw-document OCR/extraction pipelines;
-- application business logic.
-
-## Runtime rules
-
-`HSMMFilterRuntime` is stateful.
-
-Adapters using it must:
-
-- preserve event order;
-- keep timestamp mode consistent within a runtime session;
-- keep internal/external context mode consistent until `runtime.reset()`;
-- use independent runtime state for independent streams unless batching is explicitly designed;
-- ensure feature/context dimensions match the loaded model.
-
-`NHSMMRuntimeAdapter` currently maps one canonical event to runtime batch size 1.
+The evaluator is domain-neutral. It scores statistical OOS quality/stability and does not embed PnL, Sharpe, signal, risk, portfolio, or execution objectives.
 
 ## Repository layout
-
-Source layout follows `adapters/<adapter>/`. Wheel/distribution names are independent from source paths; for example the Nautilus adapter may later be released as the `nhsmm-nautilus` wheel while retaining the Python import `adapters.nautilus`.
 
 ```text
 adapters/
 ├── base.py          # Observation, Context, StateEstimate, Adapter
 ├── nhsmm.py         # NHSMMRuntimeAdapter
-├── evaluation.py    # walk-forward tuning evaluator
+├── evaluation.py    # walk-forward tuner evaluator
 ├── structured.py    # StructuredEventAdapter
-└── nautilus/
-    ├── __init__.py
-    ├── actor.py
-    ├── bar.py
-    ├── contracts.py
-    ├── temporal.py
-    ├── README.md
-    └── DEVELOPMENT.md
+└── nautilus/        # NautilusTrader integration
 
 docs/
-├── adapters.md      # runtime adapter usage and lifecycle rules
-└── evaluation.md    # walk-forward tuning/evaluation contract
+├── adapters.md      # adapter/lifecycle contract
+└── evaluation.md    # walk-forward evaluation contract
 
 tests/
 ├── test_adapter_base.py
@@ -173,28 +107,40 @@ tests/
 └── test_structured_adapter.py
 ```
 
+## NautilusTrader
+
+The canonical Nautilus integration lives under `adapters/nautilus/`.
+
+```text
+TemporalObservationData
+  -> NHSMMDataActor
+  -> TemporalAdapter
+  -> NHSMMRuntimeAdapter
+  -> NHSMMStateData
+  -> Nautilus consumer
+```
+
+Nautilus remains responsible for feature production/admission, strategy policy, portfolio/risk, and execution.
+
 ## Cross-repository contract
 
-`awa-si/nhsmm` is the source of truth for model, artifact, filtering, forecasting, validation, and `HSMMFilterRuntime` semantics. This repository depends only on the public `nhsmm` package API and must not import or mirror model internals.
+This repository depends only on the public `nhsmm` package API and must not import or mirror NHSMM internals.
 
 Current core expectations:
 
 - Python 3.12+;
-- public runtime construction through `nhsmm.HSMMFilterRuntime`;
-- artifact loading through public `nhsmm` artifact/inference helpers;
-- context-effect validation remains core-owned and is not reimplemented here.
-
-`awa-si/nhsmm-interfaces` is the source of truth for host/framework mapping, adapter lifecycle, canonical `Observation`/`Context`/`StateEstimate` contracts, walk-forward fit/evaluate orchestration over the public core API, and framework-specific packages such as `adapters/nautilus/`.
-
-The core package can be installed from its released `nhsmm` wheel. This repository is currently source-deployed; future adapter wheels may package individual integrations without moving their source directories.
+- runtime construction through `nhsmm.HSMMFilterRuntime`;
+- tuning through public `ModelConfig` / `ValidationConfig` / `ConfigTuner`;
+- artifact/inference through public core helpers;
+- validation evidence through public core snapshot/health APIs.
 
 ## Documentation
 
-- [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and StructuredEventAdapter usage.
-- [Evaluation guide](docs/evaluation.md) — walk-forward folds, tuner evaluator, scoring, and boundaries.
-- [NautilusTrader adapter](adapters/nautilus/README.md) — adapter contract and scope.
-- [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — implementation, deployment, hardening, and lifecycle notes.
-- [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.
+- [Adapter guide](docs/adapters.md)
+- [Evaluation guide](docs/evaluation.md)
+- [NautilusTrader adapter](adapters/nautilus/README.md)
+- [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md)
+- [NHSMM core](https://github.com/awa-si/nhsmm)
 
 ## Status
 

@@ -85,6 +85,7 @@ class TemporalObservationData:
     decision_sequence: int
     trigger_timeframe: str
     provenance: tuple[TimeframeProvenance, ...] = ()
+    mapping_contract: str | None = None
     contract: str = TEMPORAL_OBSERVATION_CONTRACT
 
     def __post_init__(self) -> None:
@@ -96,6 +97,8 @@ class TemporalObservationData:
             raise ValueError("decision identity must be non-negative")
         if not self.trigger_timeframe:
             raise ValueError("trigger_timeframe must be non-empty")
+        if self.mapping_contract is not None and not self.mapping_contract:
+            raise ValueError("mapping_contract must be non-empty when provided")
         if len(self.values) != len(TEMPORAL_OBSERVATION_NAMES):
             raise ValueError(
                 f"temporal observation must contain {len(TEMPORAL_OBSERVATION_NAMES)} values"

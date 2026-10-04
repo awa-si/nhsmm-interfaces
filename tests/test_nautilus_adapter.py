@@ -227,3 +227,108 @@ def test_actor_config_rejects_no_input_path():
             consume_temporal_observations=False,
             bar_type=None,
         )
+
+
+def _training_observation(ts: int, sequence: int, *, instrument: str = "BTCUSDT.BINANCE"):
+    return TemporalObservationData(
+        instrument_id=instrument,
+        values=_temporal_values(),
+        asof_ts_ns=ts,
+        decision_sequence=sequence,
+        trigger_timeframe="5m",
+        provenance=(TimeframeProvenance("5m", ts, ts, sequence),),
+    )
+
+
+def test_temporal_fold_builder_preserves_values_and_real_boundaries():
+    import torch
+
+    from adapters.nautilus import TemporalFoldBuilder
+
+    observations = [
+        _training_observation(100, 1),
+        _training_observation(200, 2),
+        _training_observation(300, 3),
+        _training_observation(400, 4),
+    ]
+
+    fold = TemporalFoldBuilder().build_fold(
+        observations,
+        label="fold-1",
+        train_through_ns=250,
+        oos_through_ns=400,
+    )
+
+    assert fold.train_end_ns == 200
+    assert fold.oos_start_ns == 300
+    assert fold.train.shape == (2, len(TEMPORAL_OBSERVATION_NAMES))
+    assert fold.oos.shape == (2, len(TEMPORAL_OBSERVATION_NAMES))
+    assert fold.train.dtype == torch.float32
+    assert tuple(fold.train[0].tolist()) == pytest.approx(observations[0].values)
+    assert tuple(fold.oos[-1].tolist()) == pytest.approx(observations[-1].values)
+
+
+def test_temporal_fold_builder_rejects_non_monotonic_identity():
+    from adapters.nautilus import TemporalFoldBuilder
+
+    observations = [
+        _training_observation(200, 1),
+        _training_observation(100, 2),
+    ]
+
+    with pytest.raises(ValueError, match="asof_ts_ns must be strictly increasing"):
+        TemporalFoldBuilder().build_fold(
+            observations,
+            label="bad",
+            train_through_ns=150,
+        )
+
+
+def test_temporal_fold_builder_rejects_cross_instrument_stream():
+    from adapters.nautilus import TemporalFoldBuilder
+
+    observations = [
+        _training_observation(100, 1),
+        _training_observation(200, 2, instrument="ETHUSDT.BINANCE"),
+    ]
+
+    with pytest.raises(ValueError, match="one instrument"):
+        TemporalFoldBuilder().build_fold(
+            observations,
+            label="bad",
+            train_through_ns=100,
+        )
+
+
+def test_temporal_fold_builder_rejects_trigger_provenance_mismatch():
+    from adapters.nautilus import TemporalFoldBuilder
+
+    bad = TemporalObservationData(
+        instrument_id="BTCUSDT.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=200,
+        decision_sequence=2,
+        trigger_timeframe="5m",
+        provenance=(TimeframeProvenance("5m", 199, 199, 1),),
+    )
+    observations = [_training_observation(100, 1), bad]
+
+    with pytest.raises(ValueError, match="trigger provenance must match"):
+        TemporalFoldBuilder().build_fold(
+            observations,
+            label="bad",
+            train_through_ns=100,
+        )
+
+
+def test_temporal_fold_builder_rejects_empty_train_or_oos_selection():
+    from adapters.nautilus import TemporalFoldBuilder
+
+    observations = [_training_observation(100, 1), _training_observation(200, 2)]
+    builder = TemporalFoldBuilder()
+
+    with pytest.raises(ValueError, match="training selection"):
+        builder.build_fold(observations, label="bad-train", train_through_ns=50)
+
+    with pytest.raises(ValueError, match="OOS selection"):
+        builder.build_fold(observations, label="bad-oos", train_through_ns=200)

@@ -20,6 +20,7 @@ class TemporalAdapter(NHSMMRuntimeAdapter):
                 "decision_sequence": event.decision_sequence,
                 "trigger_timeframe": event.trigger_timeframe,
                 "provenance": event.provenance,
+                "mapping_contract": event.mapping_contract,
             },
         )
 

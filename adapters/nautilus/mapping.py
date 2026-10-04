@@ -66,6 +66,7 @@ class AxisTemporalMapper:
             decision_sequence=int(observation.decision_sequence),
             trigger_timeframe="5m",
             provenance=provenance,
+            mapping_contract=self.mapping_contract,
         )
 
     @staticmethod

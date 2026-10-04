@@ -332,3 +332,106 @@ def test_temporal_fold_builder_rejects_empty_train_or_oos_selection():
 
     with pytest.raises(ValueError, match="OOS selection"):
         builder.build_fold(observations, label="bad-oos", train_through_ns=200)
+
+
+class _AxisPayload:
+    def __init__(
+        self,
+        *,
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        asof_ts_ns=200,
+        decision_sequence=2,
+        trigger_timeframe="5m",
+        schema_version="axis-observation-v2",
+    ):
+        self.instrument_id = instrument_id
+        self.ts_event = asof_ts_ns
+        self.ts_init = asof_ts_ns
+        self.asof_ts_ns = asof_ts_ns
+        self.decision_sequence = decision_sequence
+        self.trigger_timeframe = trigger_timeframe
+        self.axis_by_tf = {}
+        self.provenance_by_tf = {}
+        self.schema_version = schema_version
+
+
+def test_axis_observation_collector_subscribes_to_custom_data_contract():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+
+    actor = AxisObservationCollector()
+    calls = []
+    actor.subscribe_data = lambda data_type: calls.append(("subscribe", data_type))
+    actor.unsubscribe_data = lambda data_type: calls.append(("unsubscribe", data_type))
+
+    actor.on_start()
+    actor.on_stop()
+
+    assert calls == [
+        ("subscribe", AXIS_OBSERVATION_DATA_TYPE),
+        ("unsubscribe", AXIS_OBSERVATION_DATA_TYPE),
+    ]
+
+
+def test_axis_observation_collector_preserves_payload_without_mapping():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+
+    actor = AxisObservationCollector()
+    payload = _AxisPayload()
+
+    actor.on_data(CustomData(AXIS_OBSERVATION_DATA_TYPE, payload))
+
+    assert actor.observations == (payload,)
+
+
+def test_axis_observation_collector_filters_trigger_timeframe_and_instrument():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+
+    actor = AxisObservationCollector(instrument_id="BTCUSDT-PERP.BINANCE")
+    actor.on_data(
+        CustomData(
+            AXIS_OBSERVATION_DATA_TYPE,
+            _AxisPayload(trigger_timeframe="1m", asof_ts_ns=100, decision_sequence=1),
+        )
+    )
+    actor.on_data(
+        CustomData(
+            AXIS_OBSERVATION_DATA_TYPE,
+            _AxisPayload(instrument_id="ETHUSDT-PERP.BINANCE", asof_ts_ns=150, decision_sequence=2),
+        )
+    )
+    selected = _AxisPayload(asof_ts_ns=200, decision_sequence=3)
+    actor.on_data(CustomData(AXIS_OBSERVATION_DATA_TYPE, selected))
+
+    assert actor.observations == (selected,)
+
+
+def test_axis_observation_collector_rejects_non_monotonic_delivery():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+
+    actor = AxisObservationCollector()
+    actor.on_data(
+        CustomData(
+            AXIS_OBSERVATION_DATA_TYPE,
+            _AxisPayload(asof_ts_ns=200, decision_sequence=2),
+        )
+    )
+
+    with pytest.raises(ValueError, match="strictly ordered"):
+        actor.on_data(
+            CustomData(
+                AXIS_OBSERVATION_DATA_TYPE,
+                _AxisPayload(asof_ts_ns=200, decision_sequence=3),
+            )
+        )
+
+
+def test_axis_observation_collector_reset_clears_replay_state():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+
+    actor = AxisObservationCollector()
+    payload = _AxisPayload()
+    actor.on_data(CustomData(AXIS_OBSERVATION_DATA_TYPE, payload))
+
+    actor.on_reset()
+
+    assert actor.observations == ()

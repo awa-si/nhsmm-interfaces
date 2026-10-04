@@ -24,6 +24,14 @@ class AxisObservationCollector(DataActor):
     boundary.
     """
 
+    def __new__(
+        cls,
+        *,
+        trigger_timeframes: Iterable[str] = ("5m",),
+        instrument_id: str | None = None,
+    ):
+        return super().__new__(cls)
+
     def __init__(
         self,
         *,

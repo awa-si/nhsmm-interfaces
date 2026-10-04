@@ -523,6 +523,7 @@ def test_axis_temporal_mapper_has_explicit_stable_field_order():
     assert temporal.asof_ts_ns == 200
     assert temporal.decision_sequence == 7
     assert temporal.trigger_timeframe == "5m"
+    assert temporal.mapping_contract == "axis-observation-v2-to-nautilus-temporal-observations-v1"
     assert tuple(item.timeframe for item in temporal.provenance) == ("1h", "15m", "5m", "1m")
 
 
@@ -571,3 +572,24 @@ def test_axis_temporal_data_actor_ignores_non_5m_axis_observations():
 
     assert published == []
     assert actor.latest is None
+
+
+def test_temporal_fold_builder_rejects_mixed_mapping_contracts():
+    from adapters.nautilus import TemporalFoldBuilder
+
+    first = _training_observation(100, 1)
+    second = TemporalObservationData(
+        instrument_id=first.instrument_id,
+        values=first.values,
+        asof_ts_ns=200,
+        decision_sequence=2,
+        trigger_timeframe="5m",
+        mapping_contract="different-mapping-v1",
+    )
+
+    with pytest.raises(ValueError, match="one temporal mapping contract"):
+        TemporalFoldBuilder().build_fold(
+            [first, second],
+            label="mixed-mapping",
+            train_through_ns=100,
+        )

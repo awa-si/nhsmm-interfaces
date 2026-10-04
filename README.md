@@ -47,12 +47,12 @@ Walk-forward evaluation:
 
 ```python
 from adapters import (
-    NHSMMFoldEvaluation,
-    NHSMMTunerEvaluator,
-    NHSMMTunerEvaluatorConfig,
-    NHSMMTuningEvaluationReport,
-    NHSMMTuningScoreConfig,
-    WalkForwardFold,
+    FoldEvaluation,
+    WalkForwardEvaluator,
+    WalkForwardEvaluatorConfig,
+    WalkForwardReport,
+    WalkForwardScoreConfig,
+    TemporalFold,
 )
 ```
 
@@ -74,8 +74,8 @@ host event
 
 ```text
 chronological host/model-ready data
-  -> WalkForwardFold(s)
-  -> NHSMMTunerEvaluator
+  -> TemporalFold(s)
+  -> WalkForwardEvaluator
   -> fresh NHSMM fit per fold
   -> train/OOS ValidationSnapshot
   -> ValidationComparison
@@ -91,17 +91,17 @@ The evaluator is domain-neutral. It scores statistical OOS quality/stability and
 adapters/
 ├── base.py          # Observation, Context, StateEstimate, Adapter
 ├── nhsmm.py         # NHSMMRuntimeAdapter
-├── evaluation.py    # walk-forward tuner evaluator
+├── walk_forward.py  # walk-forward evaluator
 ├── structured.py    # StructuredEventAdapter
 └── nautilus/        # NautilusTrader integration
 
 docs/
 ├── adapters.md      # adapter/lifecycle contract
-└── evaluation.md    # walk-forward evaluation contract
+└── walk-forward.md   # walk-forward evaluation contract
 
 tests/
 ├── test_adapter_base.py
-├── test_evaluation.py
+├── test_walk_forward.py
 ├── test_nhsmm_adapter.py
 ├── test_nautilus_adapter.py
 └── test_structured_adapter.py
@@ -137,7 +137,7 @@ Current core expectations:
 ## Documentation
 
 - [Adapter guide](docs/adapters.md)
-- [Evaluation guide](docs/evaluation.md)
+- [Evaluation guide](docs/walk-forward.md)
 - [NautilusTrader adapter](adapters/nautilus/README.md)
 - [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md)
 - [NHSMM core](https://github.com/awa-si/nhsmm)

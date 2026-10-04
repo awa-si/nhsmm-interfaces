@@ -6,41 +6,41 @@ __all__ = [
     "Observation",
     "StateEstimate",
     "NHSMMRuntimeAdapter",
-    "WalkForwardFold",
-    "NHSMMTuningScoreConfig",
-    "NHSMMTuningEvaluationReport",
-    "NHSMMTunerEvaluatorConfig",
-    "NHSMMTunerEvaluator",
-    "NHSMMFoldEvaluation",
+    "TemporalFold",
+    "WalkForwardScoreConfig",
+    "WalkForwardReport",
+    "WalkForwardEvaluatorConfig",
+    "WalkForwardEvaluator",
+    "FoldEvaluation",
     "StructuredEventAdapter",
 ]
 
 
 def __getattr__(name: str):
     if name in {
-        "NHSMMFoldEvaluation",
-        "NHSMMTunerEvaluator",
-        "NHSMMTunerEvaluatorConfig",
-        "NHSMMTuningEvaluationReport",
-        "NHSMMTuningScoreConfig",
-        "WalkForwardFold",
+        "FoldEvaluation",
+        "WalkForwardEvaluator",
+        "WalkForwardEvaluatorConfig",
+        "WalkForwardReport",
+        "WalkForwardScoreConfig",
+        "TemporalFold",
     }:
-        from .evaluation import (
-            NHSMMFoldEvaluation,
-            NHSMMTunerEvaluator,
-            NHSMMTunerEvaluatorConfig,
-            NHSMMTuningEvaluationReport,
-            NHSMMTuningScoreConfig,
-            WalkForwardFold,
+        from .walk_forward import (
+            FoldEvaluation,
+            WalkForwardEvaluator,
+            WalkForwardEvaluatorConfig,
+            WalkForwardReport,
+            WalkForwardScoreConfig,
+            TemporalFold,
         )
 
         return {
-            "NHSMMFoldEvaluation": NHSMMFoldEvaluation,
-            "NHSMMTunerEvaluator": NHSMMTunerEvaluator,
-            "NHSMMTunerEvaluatorConfig": NHSMMTunerEvaluatorConfig,
-            "NHSMMTuningEvaluationReport": NHSMMTuningEvaluationReport,
-            "NHSMMTuningScoreConfig": NHSMMTuningScoreConfig,
-            "WalkForwardFold": WalkForwardFold,
+            "FoldEvaluation": FoldEvaluation,
+            "WalkForwardEvaluator": WalkForwardEvaluator,
+            "WalkForwardEvaluatorConfig": WalkForwardEvaluatorConfig,
+            "WalkForwardReport": WalkForwardReport,
+            "WalkForwardScoreConfig": WalkForwardScoreConfig,
+            "TemporalFold": TemporalFold,
         }[name]
     if name == "NHSMMRuntimeAdapter":
         from .nhsmm import NHSMMRuntimeAdapter

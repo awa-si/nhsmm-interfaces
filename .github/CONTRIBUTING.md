@@ -17,7 +17,7 @@ Run the smallest test set that covers the change. Run all available relevant tes
 Examples:
 
 ```bash
-python -m pytest -q tests/test_evaluation.py
+python -m pytest -q tests/test_walk_forward.py
 python -m pytest -q tests --ignore=tests/test_nautilus_adapter.py
 ```
 

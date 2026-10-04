@@ -341,7 +341,7 @@ Repository examples:
 
 ## 11. Walk-forward evaluation boundary
 
-`NHSMMTunerEvaluator` is the domain-neutral fit/evaluate orchestration layer around the public core tuning/configuration API.
+`WalkForwardEvaluator` is the domain-neutral fit/evaluate orchestration layer around the public core tuning/configuration API.
 
 It owns:
 
@@ -360,4 +360,4 @@ It does not own:
 - trading return/PnL objectives;
 - strategy, risk, portfolio, or execution decisions.
 
-See [evaluation.md](evaluation.md) for the complete contract.
+See [evaluation.md](walk-forward.md) for the complete contract.

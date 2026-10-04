@@ -29,7 +29,7 @@ change_flow:
 - do_not_add_nautilus_dependency_to_generic_import_path: true
 
 evaluator_path:
-- canonical_flow: chronological_model_ready_data -> WalkForwardFold -> NHSMMTunerEvaluator -> TuneEvaluation -> nhsmm.ConfigTuner
+- canonical_flow: chronological_model_ready_data -> TemporalFold -> WalkForwardEvaluator -> TuneEvaluation -> nhsmm.ConfigTuner
 - candidate_contract: ModelConfig_only
 - ValidationConfig_as_candidate: prohibited_until_all_candidate_fields_have_defined_evaluator_semantics
 - train_oos_ordering: train_end_ns < oos_start_ns
@@ -39,16 +39,16 @@ evaluator_path:
 - fresh_model_per_fold: required
 - fit_on_oos: prohibited
 - same_fitted_model_for_train_oos_snapshot_comparison: required
-- default_seed_policy: fold
-- fold_seed_mode_requires_candidate_seed_none: true
-- unhealthy_oos_default: reject_candidate_with_finite_rejected_score
+- default_seed_policy: per_fold
+- per_fold_seed_mode_requires_candidate_seed_none: true
+- unhealthy_oos_default: reject_candidate_with_finite_rejection_score
 - soft_health_penalty_requires_explicit_policy: true
 - cross_retrain_state_stability: required_before_claiming_market_regime_stability
 
 nautilus_path:
 - canonical_runtime_input: adapters.nautilus.TemporalObservationData
 - canonical_training_input_builder: not_yet_implemented
-- next_builder_contract: causally_admitted_TemporalObservationData -> chronological_model_ready_sequences -> WalkForwardFold
+- next_builder_contract: causally_admitted_TemporalObservationData -> chronological_model_ready_sequences -> TemporalFold
 - use_provenance_and_asof_timestamp_to_prove_causality: required
 - Bars|Trades|Quotes_feature_construction: nautilus_consumer_owned
 - interface_may_validate_and_preserve_admitted_contract_but_not_recompute_trading_features: true

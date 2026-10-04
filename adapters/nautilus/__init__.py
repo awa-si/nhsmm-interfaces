@@ -13,6 +13,7 @@ from .actor import (
 )
 from .bar import BAR_FIELDS, BarAdapter
 from .temporal import TemporalAdapter
+from .training import TemporalFoldBuilder
 from .contracts import (
     SIGNED_TEMPORAL_OBSERVATIONS,
     TEMPORAL_OBSERVATION_CONTRACT,
@@ -33,6 +34,7 @@ __all__ = [
     "TEMPORAL_OBSERVATION_DATA_TYPE",
     "BarAdapter",
     "TemporalAdapter",
+    "TemporalFoldBuilder",
     "BAR_FIELDS",
     "SIGNED_TEMPORAL_OBSERVATIONS",
     "TEMPORAL_OBSERVATION_CONTRACT",

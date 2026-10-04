@@ -112,7 +112,10 @@ tests/
 The canonical Nautilus integration lives under `adapters/nautilus/`.
 
 ```text
-TemporalObservationData
+AxisObservation (CustomData)
+  -> AxisObservationCollector / AxisTemporalDataActor
+  -> AxisTemporalMapper
+  -> TemporalObservationData (CustomData)
   -> NHSMMDataActor
   -> TemporalAdapter
   -> NHSMMRuntimeAdapter

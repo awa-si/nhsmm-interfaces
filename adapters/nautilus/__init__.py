@@ -9,6 +9,7 @@ from .axis import (
     AXIS_OBSERVATION_DATA_TYPE_NAME,
     AXIS_OBSERVATION_SCHEMA,
     AxisObservationCollector,
+    validate_axis_observation,
 )
 from .actor import (
     NHSMMDataActor,
@@ -43,6 +44,7 @@ __all__ = [
     "AXIS_OBSERVATION_DATA_TYPE_NAME",
     "AXIS_OBSERVATION_SCHEMA",
     "AxisObservationCollector",
+    "validate_axis_observation",
     "NHSMMDataActor",
     "NHSMMDataActorConfig",
     "NHSMMStateData",

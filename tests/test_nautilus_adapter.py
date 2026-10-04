@@ -473,3 +473,101 @@ def test_axis_observation_collector_rejects_trigger_provenance_mismatch():
         AxisObservationCollector().on_data(
             CustomData(AXIS_OBSERVATION_DATA_TYPE, payload)
         )
+
+
+class _AxisState:
+    def __init__(self, **values):
+        self.__dict__.update(values)
+
+
+def _mapped_axis_payload():
+    payload = _AxisPayload(asof_ts_ns=200, decision_sequence=7)
+    payload.axis_by_tf = {
+        "1m": _AxisState(shock=0.18),
+        "5m": _AxisState(direction=-0.21, volatility_accel=0.31, activity_accel=-0.14),
+        "15m": _AxisState(
+            direction=0.22,
+            efficiency=0.23,
+            persistence=0.24,
+            volatility=0.25,
+            compression=0.26,
+            activity=0.27,
+            participation=0.28,
+            flow=-0.29,
+        ),
+        "1h": _AxisState(
+            direction=-0.11,
+            efficiency=0.12,
+            persistence=0.13,
+            volatility=0.14,
+            compression=0.15,
+            activity=0.16,
+        ),
+    }
+    return payload
+
+
+def test_axis_temporal_mapper_has_explicit_stable_field_order():
+    from adapters.nautilus import AxisTemporalMapper
+
+    temporal = AxisTemporalMapper().to_temporal(_mapped_axis_payload())
+
+    assert temporal.values == pytest.approx(
+        (
+            -0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
+            0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, -0.29,
+            -0.21, 0.31, -0.14,
+            0.18,
+        )
+    )
+    assert temporal.asof_ts_ns == 200
+    assert temporal.decision_sequence == 7
+    assert temporal.trigger_timeframe == "5m"
+    assert tuple(item.timeframe for item in temporal.provenance) == ("1h", "15m", "5m", "1m")
+
+
+def test_axis_temporal_mapper_rejects_non_5m_source():
+    from adapters.nautilus import AxisTemporalMapper
+
+    payload = _mapped_axis_payload()
+    payload.trigger_timeframe = "1m"
+
+    with pytest.raises(ValueError, match="5m trigger"):
+        AxisTemporalMapper().to_temporal(payload)
+
+
+def test_axis_temporal_data_actor_publishes_temporal_custom_data():
+    from adapters.nautilus import (
+        AXIS_OBSERVATION_DATA_TYPE,
+        TEMPORAL_OBSERVATION_DATA_TYPE,
+        AxisTemporalDataActor,
+        TemporalObservationData,
+    )
+
+    actor = AxisTemporalDataActor()
+    published = []
+    actor.publish_data = lambda data_type, data: published.append((data_type, data))
+
+    actor.on_data(CustomData(AXIS_OBSERVATION_DATA_TYPE, _mapped_axis_payload()))
+
+    assert len(published) == 1
+    data_type, wrapped = published[0]
+    assert data_type == TEMPORAL_OBSERVATION_DATA_TYPE
+    assert wrapped.data_type == TEMPORAL_OBSERVATION_DATA_TYPE
+    assert isinstance(wrapped.data, TemporalObservationData)
+    assert actor.latest is wrapped.data
+
+
+def test_axis_temporal_data_actor_ignores_non_5m_axis_observations():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisTemporalDataActor
+
+    actor = AxisTemporalDataActor()
+    published = []
+    actor.publish_data = lambda data_type, data: published.append((data_type, data))
+    payload = _mapped_axis_payload()
+    payload.trigger_timeframe = "1m"
+
+    actor.on_data(CustomData(AXIS_OBSERVATION_DATA_TYPE, payload))
+
+    assert published == []
+    assert actor.latest is None

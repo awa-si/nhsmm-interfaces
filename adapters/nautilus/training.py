@@ -81,6 +81,7 @@ class TemporalFoldBuilder:
             raise ValueError("unsupported temporal observation contract")
         instrument_id = first.instrument_id
         contract = first.contract
+        mapping_contract = first.mapping_contract
 
         previous_ts = -1
         previous_sequence = -1
@@ -89,6 +90,8 @@ class TemporalFoldBuilder:
         for item in observations:
             if item.contract != contract:
                 raise ValueError("observations must use one temporal observation contract")
+            if item.mapping_contract != mapping_contract:
+                raise ValueError("observations must use one temporal mapping contract")
             if item.instrument_id != instrument_id:
                 raise ValueError("observations must belong to one instrument")
 

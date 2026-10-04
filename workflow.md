@@ -47,12 +47,12 @@ evaluator_path:
 
 nautilus_path:
 - canonical_consumer_reference: awa-si/nautilus@main
-- canonical_runtime_input: adapters.nautilus.TemporalObservationData
+- canonical_runtime_input: awa-si/nautilus AxisObservation CustomData -> adapters.nautilus.AxisObservationCollector -> explicit versioned mapping -> TemporalObservationData
 - current_nautilus_temporal_model_status: reserved_not_integrated
 - current_nautilus_market_observation_baseline: causal_raw_4tf_76_coordinates
 - current_nautilus_timeframes: 1h|15m|5m|1m
 - current_nautilus_decision_anchor: 5m
-- current_nautilus_provenance_owner: predictive.provenance.FeatureSnapshot
+- current_nautilus_provenance_owner: awa-si/nautilus observation.AxisObservation
 - existing_temporal_observation_v1_status: frozen_18_coordinate_interface_contract_from_older_nautilus_research_state
 - raw_4tf_76_and_temporal_observation_v1_equivalence: prohibited
 - silent_76_to_18_mapping: prohibited
@@ -60,6 +60,20 @@ nautilus_path:
 - current_raw_4tf_feature_construction_and_admission: nautilus_consumer_owned
 - interface_may_validate_and_preserve_admitted_contract_but_not_recompute_trading_features: true
 - any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
+
+axis_observation_collection:
+- canonical_consumer: adapters.nautilus.AxisObservationCollector
+- source_schema: axis-observation-v2
+- source_data_type: AxisObservation
+- transport: Nautilus_CustomData
+- default_trigger_timeframe: 5m
+- preserve_source_payload_without_feature_derivation: required
+- source_schema_validation: required
+- per_instrument_asof_ts_ns: strictly_increasing
+- per_instrument_decision_sequence: strictly_increasing
+- collector_reset_clears_replay_state: required
+- direct_axis_to_temporal_observation_mapping: prohibited_until_explicit_versioned_contract_exists
+- ml_feature_snapshot_dependency: prohibited
 
 nautilus_training_builder:
 - canonical_training_input_builder: adapters.nautilus.TemporalFoldBuilder

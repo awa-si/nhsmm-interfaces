@@ -40,11 +40,11 @@ class AxisTemporalMapper:
     mapping_contract: str = AXIS_TEMPORAL_MAPPING_CONTRACT
 
     def to_temporal(self, observation: object) -> TemporalObservationData:
+        if getattr(observation, "trigger_timeframe", None) != "5m":
+            raise ValueError("Axis temporal mapping requires a 5m trigger observation")
         AxisObservationCollector._validate_observation(observation)
         if self.mapping_contract != AXIS_TEMPORAL_MAPPING_CONTRACT:
             raise ValueError("unsupported Axis temporal mapping contract")
-        if observation.trigger_timeframe != "5m":
-            raise ValueError("Axis temporal mapping requires a 5m trigger observation")
 
         values = []
         for timeframe, field in AXIS_TEMPORAL_MAPPING_FIELDS:
@@ -89,6 +89,9 @@ class AxisTemporalMapper:
 
 class AxisTemporalDataActor(DataActor):
     """Bridge canonical Nautilus AxisObservation CustomData to temporal input."""
+
+    def __new__(cls, mapper: AxisTemporalMapper | None = None):
+        return super().__new__(cls)
 
     def __init__(self, mapper: AxisTemporalMapper | None = None) -> None:
         super().__init__()

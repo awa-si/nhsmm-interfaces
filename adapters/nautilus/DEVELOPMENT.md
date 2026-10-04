@@ -36,6 +36,14 @@ publish_data(...)
 
 The optional Bar path remains a limited framework fallback.
 
+## Training fold builder
+
+`TemporalFoldBuilder` converts an already-admitted, strictly ordered `TemporalObservationData` stream into one `TemporalFold` for the generic walk-forward evaluator. It preserves the 18 transferred values exactly and derives `train_end_ns` / `oos_start_ns` from the actual selected observations.
+
+The builder rejects non-monotonic timestamps or decision sequences, mixed instruments, trigger-provenance mismatches, and empty train/OOS selections. It does not construct market features, labels, context, or trading objectives.
+
+The current `awa-si/nautilus@main` production/research baseline uses a separate causal 76-coordinate `raw_4tf` contract. That contract is not equivalent to `nautilus-temporal-observations-v1`; no implicit 76→18 mapping is permitted. A future Nautilus→NHSMM producer requires an explicit versioned cross-repository mapping contract.
+
 ## Input ownership
 
 The transferred `nautilus-temporal-observations-v1` contract contains the reusable, policy-free data required at the adapter boundary:
@@ -306,7 +314,8 @@ Committed Nautilus adapter tests currently cover:
 - wrong temporal payload rejection;
 - fail-closed inference errors with no stale publication;
 - future-provenance rejection;
-- invalid no-input actor configuration.
+- invalid no-input actor configuration;
+- temporal training-fold construction and causal boundary validation.
 
 These are framework-hook tests. End-to-end tests with a real NHSMM artifact/runtime and Nautilus backtest/live engine remain production-hardening work.
 

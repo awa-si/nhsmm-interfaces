@@ -66,6 +66,12 @@ ts_init  = asof_ts_ns
 
 The NHSMM runtime receives `asof_ts_ns` as its timestamp.
 
+## Training input
+
+`TemporalFoldBuilder` converts a strictly ordered sequence of already-admitted `TemporalObservationData` values into a generic `TemporalFold` for walk-forward training/evaluation. It preserves the transferred values exactly, derives fold boundaries from the actual selected observation identities, and rejects mixed instruments, non-monotonic decision identity, trigger-provenance mismatch, and empty train/OOS selections.
+
+The builder does not construct Bars/Trades/Quotes features, labels, context, or trading objectives. The current `awa-si/nautilus@main` `raw_4tf` 76-coordinate baseline is not implicitly mapped to the frozen 18-coordinate `nautilus-temporal-observations-v1` contract; any such producer mapping requires a separate explicit versioned cross-repository contract.
+
 ## Output contract
 
 The actor publishes `NHSMMStateData` using schema `nautilus-nhsmm-state-v1`.

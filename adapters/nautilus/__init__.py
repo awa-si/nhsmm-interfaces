@@ -18,6 +18,12 @@ from .actor import (
     TEMPORAL_OBSERVATION_DATA_TYPE,
 )
 from .bar import BAR_FIELDS, BarAdapter
+from .mapping import (
+    AXIS_TEMPORAL_MAPPING_CONTRACT,
+    AXIS_TEMPORAL_MAPPING_FIELDS,
+    AxisTemporalDataActor,
+    AxisTemporalMapper,
+)
 from .temporal import TemporalAdapter
 from .training import TemporalFoldBuilder
 from .contracts import (
@@ -43,6 +49,10 @@ __all__ = [
     "NHSMM_STATE_DATA_TYPE",
     "TEMPORAL_OBSERVATION_DATA_TYPE",
     "BarAdapter",
+    "AXIS_TEMPORAL_MAPPING_CONTRACT",
+    "AXIS_TEMPORAL_MAPPING_FIELDS",
+    "AxisTemporalDataActor",
+    "AxisTemporalMapper",
     "TemporalAdapter",
     "TemporalFoldBuilder",
     "BAR_FIELDS",

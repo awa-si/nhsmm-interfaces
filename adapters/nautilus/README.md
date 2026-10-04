@@ -14,7 +14,16 @@ This directory is the canonical implementation owner for the NautilusTrader↔NH
 ## Architecture
 
 ```text
-Nautilus AxisObservation (CustomData)\n        |\n        v\nAxisObservationCollector\n        |\n        v\nexplicit versioned mapping\n        |\n        v\nTemporalObservationData (CustomData)
+Nautilus AxisObservation (CustomData)
+        |
+        v
+AxisObservationCollector / AxisTemporalDataActor
+        |
+        v
+AxisTemporalMapper
+        |
+        v
+TemporalObservationData (CustomData)
         |
         v
 NHSMMDataActor
@@ -100,7 +109,7 @@ The NHSMM runtime receives `asof_ts_ns` as its timestamp.
 
 `TemporalFoldBuilder` converts a strictly ordered sequence of already-admitted `TemporalObservationData` values into a generic `TemporalFold` for walk-forward training/evaluation. It preserves the transferred values exactly, derives fold boundaries from the actual selected observation identities, and rejects mixed instruments, non-monotonic decision identity, trigger-provenance mismatch, and empty train/OOS selections.
 
-The builder does not construct Bars/Trades/Quotes features, labels, context, or trading objectives. The current `awa-si/nautilus@main` `raw_4tf` 76-coordinate baseline is not implicitly mapped to the frozen 18-coordinate `nautilus-temporal-observations-v1` contract; any such producer mapping requires a separate explicit versioned cross-repository contract.
+The builder does not construct Bars/Trades/Quotes features, labels, context, or trading objectives. Current `awa-si/nautilus@main` `AxisObservation v2` is mapped explicitly by `AxisTemporalMapper`; the separate supervised `raw_4tf` 76-coordinate ML contract is not used or reinterpreted by the NHSMM path.
 
 ## Output contract
 
@@ -175,4 +184,5 @@ Production stabilization still needs:
 - optional forecast publication;
 - persistence/catalog serialization if required;
 - multi-stream runtime ownership;
-- backtest/live lifecycle integration tests.
+- native BacktestEngine/DataBus replay integration test;
+- live lifecycle integration tests.

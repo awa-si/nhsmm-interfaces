@@ -334,6 +334,13 @@ def test_temporal_fold_builder_rejects_empty_train_or_oos_selection():
         builder.build_fold(observations, label="bad-oos", train_through_ns=200)
 
 
+class _AxisSource:
+    def __init__(self, ts: int, sequence: int):
+        self.source_ts_event_ns = ts
+        self.source_ts_init_ns = ts
+        self.processed_sequence = sequence
+
+
 class _AxisPayload:
     def __init__(
         self,
@@ -350,8 +357,11 @@ class _AxisPayload:
         self.asof_ts_ns = asof_ts_ns
         self.decision_sequence = decision_sequence
         self.trigger_timeframe = trigger_timeframe
-        self.axis_by_tf = {}
-        self.provenance_by_tf = {}
+        self.axis_by_tf = {tf: object() for tf in ("1m", "5m", "15m", "1h")}
+        self.provenance_by_tf = {
+            tf: _AxisSource(asof_ts_ns - (0 if tf == trigger_timeframe else 1), decision_sequence)
+            for tf in ("1m", "5m", "15m", "1h")
+        }
         self.schema_version = schema_version
 
 
@@ -435,3 +445,31 @@ def test_axis_observation_collector_reset_clears_replay_state():
     actor.on_reset()
 
     assert actor.observations == ()
+
+
+def test_axis_observation_data_type_matches_cross_repository_identity():
+    from nautilus_trader.model import DataType
+
+    from adapters.nautilus import (
+        AXIS_OBSERVATION_DATA_TYPE,
+        AXIS_OBSERVATION_SCHEMA,
+    )
+
+    producer_type = DataType(
+        "AxisObservation",
+        metadata={"schema": AXIS_OBSERVATION_SCHEMA},
+    )
+
+    assert producer_type == AXIS_OBSERVATION_DATA_TYPE
+
+
+def test_axis_observation_collector_rejects_trigger_provenance_mismatch():
+    from adapters.nautilus import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+
+    payload = _AxisPayload()
+    payload.provenance_by_tf["5m"] = _AxisSource(payload.asof_ts_ns - 1, payload.decision_sequence)
+
+    with pytest.raises(ValueError, match="trigger provenance mismatch"):
+        AxisObservationCollector().on_data(
+            CustomData(AXIS_OBSERVATION_DATA_TYPE, payload)
+        )

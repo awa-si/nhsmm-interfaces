@@ -6,7 +6,7 @@ from nautilus_trader.common import DataActor
 from nautilus_trader.model import CustomData
 
 from .actor import TEMPORAL_OBSERVATION_DATA_TYPE
-from .axis import AXIS_OBSERVATION_DATA_TYPE, AxisObservationCollector
+from .axis import AXIS_OBSERVATION_DATA_TYPE, validate_axis_observation
 from .contracts import TemporalObservationData, TimeframeProvenance
 
 
@@ -42,7 +42,7 @@ class AxisTemporalMapper:
     def to_temporal(self, observation: object) -> TemporalObservationData:
         if getattr(observation, "trigger_timeframe", None) != "5m":
             raise ValueError("Axis temporal mapping requires a 5m trigger observation")
-        AxisObservationCollector._validate_observation(observation)
+        validate_axis_observation(observation)
         if self.mapping_contract != AXIS_TEMPORAL_MAPPING_CONTRACT:
             raise ValueError("unsupported Axis temporal mapping contract")
 

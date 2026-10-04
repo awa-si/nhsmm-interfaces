@@ -49,7 +49,7 @@ nautilus_path:
 - canonical_consumer_reference: awa-si/nautilus@main
 - canonical_runtime_input: awa-si/nautilus AxisObservation CustomData -> adapters.nautilus.AxisObservationCollector -> explicit versioned mapping -> TemporalObservationData
 - current_nautilus_temporal_model_status: reserved_not_integrated
-- current_nautilus_market_observation_baseline: causal_raw_4tf_76_coordinates
+- current_nautilus_market_observation_baseline: causal_AxisObservation_v2_CustomData
 - current_nautilus_timeframes: 1h|15m|5m|1m
 - current_nautilus_decision_anchor: 5m
 - current_nautilus_provenance_owner: awa-si/nautilus observation.AxisObservation
@@ -57,7 +57,8 @@ nautilus_path:
 - raw_4tf_76_and_temporal_observation_v1_equivalence: prohibited
 - silent_76_to_18_mapping: prohibited
 - Bars|Trades|Quotes_feature_construction: nautilus_consumer_owned
-- current_raw_4tf_feature_construction_and_admission: nautilus_consumer_owned
+- current_AxisObservation_construction_and_admission: nautilus_consumer_owned
+- supervised_raw_4tf_76_contract: separate_ml_path_not_temporal_mapping_input
 - interface_may_validate_and_preserve_admitted_contract_but_not_recompute_trading_features: true
 - canonical_axis_to_temporal_mapping: adapters.nautilus.AxisTemporalMapper
 - canonical_axis_to_temporal_mapping_contract: axis-observation-v2-to-nautilus-temporal-observations-v1
@@ -102,7 +103,9 @@ nautilus_training_builder:
 - context_mapping: none_unless_explicit_versioned_contract_is_added
 - trading_labels_or_targets: prohibited
 - pnl|sharpe|risk|execution_objectives: prohibited
-- builder_must_not_claim_current_nautilus_production_integration_until_nautilus_emits_a_compatible_versioned_temporal_observation_contract: true
+- current_nautilus_replay_mapping_available: true
+- current_mapping_requires_axis_observation_v2_and_contract_identity: true
+- production_model_readiness_claim_from_mapping_alone: prohibited
 
 verification:
 - generic_evaluator_or_adapter_change: run_focused_tests_first

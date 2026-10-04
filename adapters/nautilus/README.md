@@ -14,10 +14,7 @@ This directory is the canonical implementation owner for the NautilusTrader↔NH
 ## Architecture
 
 ```text
-Nautilus feature/data producer
-        |
-        v
-TemporalObservationData (CustomData)
+Nautilus AxisObservation (CustomData)\n        |\n        v\nAxisObservationCollector\n        |\n        v\nexplicit versioned mapping\n        |\n        v\nTemporalObservationData (CustomData)
         |
         v
 NHSMMDataActor
@@ -40,9 +37,15 @@ Nautilus Strategy / Actor consumers
 
 The design is DataActor-first because NHSMM filtering is stateful data processing, not order management.
 
-## Primary input contract
+## Replay input boundary
 
-The primary adapter input is `TemporalObservationData`, schema `nautilus-temporal-observations-v1`.
+Current `awa-si/nautilus@main` publishes neutral causal `AxisObservation` values as Nautilus `CustomData` using schema `axis-observation-v2`. `AxisObservationCollector` subscribes to that DataType directly and preserves selected source payloads unchanged for replay/training orchestration. It defaults to the 5m decision boundary and enforces strictly increasing `asof_ts_ns` and `decision_sequence` per instrument.
+
+The collector does not import Nautilus consumer model classes, does not depend on the ML `FeatureSnapshot` path, and does not derive NHSMM features. A direct Axis→NHSMM feature mapping remains prohibited until an explicit versioned cross-repository contract is defined.
+
+## Model input contract
+
+The current model-facing adapter input remains `TemporalObservationData`, schema `nautilus-temporal-observations-v1`.
 
 It carries:
 
@@ -55,7 +58,7 @@ It carries:
 
 The feature names and signed/unsigned ranges are defined in `contracts.py`.
 
-`awa-si/nautilus` remains responsible for producing/admitting those features from its TA/Axis pipeline, including freshness and trading-side admission policy. Those policies are not duplicated here.
+`TemporalObservationData v1` is a frozen older interface contract. Current `awa-si/nautilus@main` does not produce it directly. The current integration boundary is `AxisObservation CustomData`; any future Axis→TemporalObservation mapping must be explicit and versioned in this repository.
 
 For Nautilus CustomData timing, the admitted observation exposes:
 

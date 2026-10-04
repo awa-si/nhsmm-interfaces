@@ -62,7 +62,7 @@ nautilus_path:
 - any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
 
 nautilus_training_builder:
-- canonical_training_input_builder: next_implementation_target
+- canonical_training_input_builder: adapters.nautilus.TemporalFoldBuilder
 - input: sequence_of_already_admitted_TemporalObservationData
 - output: chronological_model_ready_sequences -> TemporalFold
 - feature_values: preserve_input_values_exactly_in_contract_order

@@ -43,7 +43,7 @@ Supported payloads are floating tensors shaped `[T,F]` or `[B,T,F]`, or non-empt
 
 ## NHSMMTunerEvaluator
 
-The evaluator accepts a `ModelConfig` or `ValidationConfig`. For every fold it:
+The evaluator accepts `ModelConfig` candidates only. `ValidationConfig` is intentionally rejected because its data/scenario/acceptance fields are not evaluator inputs and accepting it would create inert tuning paths. For every fold it:
 
 1. creates a fresh NHSMM model;
 2. initializes model distributions;
@@ -87,7 +87,7 @@ For fold index `i`:
 fit_seed = base_seed + i
 ```
 
-This gives every candidate the same seed on the same fold, reducing candidate-ranking noise.
+This gives every candidate the same seed on the same fold, reducing candidate-ranking noise. In this mode candidate `ModelConfig.seed` must remain `None`; a non-null seed is rejected rather than silently ignored.
 
 `seed_mode="config"` instead preserves the candidate model seed and requires `ModelConfig.seed` to be set.
 
@@ -103,7 +103,7 @@ score
   - 5.00 * unhealthy OOS fraction
 ```
 
-All weights are explicit in `NHSMMTuningScoreConfig`.
+All weights are explicit in `NHSMMTuningScoreConfig`. By default, any unhealthy OOS fold disqualifies the candidate with the finite `rejected_score`; `invalid_oos_policy="penalize"` is available only when soft health handling is explicitly desired. The report records `rejected` and concrete rejection reasons.
 
 The score is intentionally domain-neutral. It ranks statistical OOS model quality and stability; it is not a trading-performance objective.
 
@@ -137,7 +137,7 @@ The report is dictionary/JSON-compatible through `as_dict()`.
 
 Belongs in this evaluator:
 
-- strict walk-forward ordering;
+- strict per-fold train→OOS ordering and strictly increasing fold boundaries;
 - fresh fit per fold;
 - deterministic fit-seed policy;
 - use of public NHSMM validation/health contracts;
@@ -152,4 +152,4 @@ Does not belong here:
 - portfolio/risk decisions;
 - order generation or execution.
 
-The next integration layer should therefore map host data into model-ready chronological folds, then pass those folds to this evaluator.
+The next integration layer must therefore establish the real timestamp/provenance guarantee while mapping host data into model-ready chronological folds. `WalkForwardFold` validates declared boundaries and tensor/context structure; it cannot infer timestamps from anonymous tensors.

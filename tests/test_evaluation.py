@@ -4,7 +4,7 @@ import json
 
 import pytest
 import torch
-from nhsmm import Choice, ConfigTuner, ModelConfig, ValidationConfig
+from nhsmm import Choice, ConfigTuner, ModelConfig, ModelHealthThresholds, ValidationConfig
 
 from adapters import (
     NHSMMTunerEvaluator,
@@ -96,22 +96,23 @@ def test_evaluator_is_direct_config_tuner_callback() -> None:
     assert "healthy_oos_fraction" in report.best.evaluation.metrics
 
 
-def test_evaluator_accepts_validation_config_health_contract() -> None:
-    base = ValidationConfig().with_overrides(
-        model=_model_config(max_iter=4).to_dict(),
-        health={"max_state_occupancy": 0.95},
-    )
+def test_evaluator_rejects_validation_config_candidates() -> None:
     evaluator = NHSMMTunerEvaluator([_fold("fold-1", 0, 31)])
 
-    result = evaluator(base)
+    with pytest.raises(TypeError, match="candidate must be ModelConfig"):
+        evaluator(ValidationConfig())
 
-    assert result.metrics["folds"] == 1.0
-    assert 0.0 <= result.metrics["healthy_oos_fraction"] <= 1.0
+
+def test_fold_seed_mode_rejects_candidate_seed() -> None:
+    evaluator = NHSMMTunerEvaluator([_fold("fold-1", 0, 41)])
+
+    with pytest.raises(ValueError, match="would otherwise be silently ignored"):
+        evaluator(_model_config().with_overrides(seed=99))
 
 
 def test_config_seed_mode_requires_explicit_candidate_seed() -> None:
     evaluator = NHSMMTunerEvaluator(
-        [_fold("fold-1", 0, 41)],
+        [_fold("fold-1", 0, 42)],
         config=NHSMMTunerEvaluatorConfig(seed_mode="config"),
     )
 
@@ -128,7 +129,17 @@ def test_score_policy_penalizes_unhealthy_and_drift() -> None:
     )
     evaluator = NHSMMTunerEvaluator(
         [_fold("fold-1", 0, 51)],
-        config=NHSMMTunerEvaluatorConfig(score=score),
+        config=NHSMMTunerEvaluatorConfig(
+            score=score,
+            invalid_oos_policy="penalize",
+            health=ModelHealthThresholds(
+                min_effective_states=1.0,
+                max_state_occupancy=1.0,
+                min_viterbi_states=1,
+                max_duration_peak=1.0,
+                max_transition_peak=1.0,
+            ),
+        ),
     )
 
     result = evaluator.evaluate(_model_config(max_iter=4))
@@ -150,5 +161,70 @@ def test_evaluator_rejects_unordered_or_duplicate_folds() -> None:
 
     later = _fold("later", 2_000, 63)
     earlier = _fold("earlier", 1_000, 64)
-    with pytest.raises(ValueError, match="ordered by oos_start_ns"):
+    with pytest.raises(ValueError, match="train_end_ns values must be strictly increasing"):
         NHSMMTunerEvaluator([later, earlier])
+
+    first_same_oos = WalkForwardFold(
+        label="first-same-oos",
+        train=_sequence(65),
+        oos=_sequence(66),
+        train_end_ns=1_000,
+        oos_start_ns=5_000,
+    )
+    second_same_oos = WalkForwardFold(
+        label="second-same-oos",
+        train=_sequence(67),
+        oos=_sequence(68),
+        train_end_ns=2_000,
+        oos_start_ns=5_000,
+    )
+    with pytest.raises(ValueError, match="oos_start_ns values must be strictly increasing"):
+        NHSMMTunerEvaluator([first_same_oos, second_same_oos])
+
+
+def test_unhealthy_oos_is_rejected_by_default() -> None:
+    evaluator = NHSMMTunerEvaluator(
+        [_fold("fold-1", 0, 71)],
+        config=NHSMMTunerEvaluatorConfig(
+            health=ModelHealthThresholds(max_state_occupancy=0.1),
+            rejected_score=-12345.0,
+        ),
+    )
+
+    report = evaluator.evaluate(_model_config(max_iter=4))
+    tune = report.as_tune_evaluation()
+
+    assert report.rejected is True
+    assert report.score == -12345.0
+    assert report.rejection_reasons == ("fold-1: unhealthy OOS model state",)
+    assert tune.metrics["rejected"] == 1.0
+
+
+def test_walk_forward_context_must_match_observation_structure() -> None:
+    train = _sequence(81)
+    oos = _sequence(82)
+
+    with pytest.raises(ValueError, match="does not match observation timesteps"):
+        WalkForwardFold(
+            label="bad-context",
+            train=train,
+            oos=oos,
+            train_end_ns=100,
+            oos_start_ns=101,
+            train_context=torch.ones(train.shape[1] - 1, 3),
+        )
+
+
+def test_variable_length_context_lengths_must_match() -> None:
+    train = [torch.ones(5, 2), torch.ones(7, 2)]
+    oos = [torch.ones(6, 2), torch.ones(8, 2)]
+
+    with pytest.raises(ValueError, match="does not match observation length"):
+        WalkForwardFold(
+            label="bad-variable-context",
+            train=train,
+            oos=oos,
+            train_end_ns=100,
+            oos_start_ns=101,
+            train_context=[torch.ones(5, 3), torch.ones(6, 3)],
+        )

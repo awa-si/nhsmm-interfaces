@@ -1,0 +1,67 @@
+scope: repository_workflow_delta
+repository: awa-si/nhsmm-interfaces
+branch: dev
+mode: extend_parent_and_explicit_override_only
+
+inherit:
+- awa-si/admin/workflow.md
+- applicable_nhsmm_core_contracts_when_consumed
+- override_only_if_explicit: true
+
+workspace:
+- profile: workspace.ini
+- attached_data: nautilus
+- attached_data_mode: read_only
+- use_attached_nautilus_as_consumer_reference_when_nautilus_contract_or_fixture_state_is_material
+- do_not_modify_attached_nautilus_data_from_this_repository_workflow: true
+
+ownership:
+- nhsmm_core: model|optimizer|config|artifact|inference|filtering|forecasting|health|validation|tuning_primitives
+- nhsmm_interfaces: host_mapping|adapter_lifecycle|walk_forward_orchestration|framework_integration
+- nautilus_consumer: feature_production|feature_admission|strategy|portfolio|risk|execution
+- private_core_imports_or_semantic_duplication: prohibited
+
+change_flow:
+- inspect_current_target_contract_and_public_nhsmm_dependency_first: true
+- implement_smallest_coherent_interface_change: true
+- update_tests_and_material_docs_with_public_contract_change: true
+- preserve_framework_independence_of_generic_adapters: required
+- do_not_add_nautilus_dependency_to_generic_import_path: true
+
+evaluator_path:
+- canonical_flow: chronological_model_ready_data -> WalkForwardFold -> NHSMMTunerEvaluator -> TuneEvaluation -> nhsmm.ConfigTuner
+- candidate_contract: ModelConfig_only
+- ValidationConfig_as_candidate: prohibited_until_all_candidate_fields_have_defined_evaluator_semantics
+- train_oos_ordering: train_end_ns < oos_start_ns
+- multi_fold_ordering: train_end_ns_strictly_increasing|oos_start_ns_strictly_increasing
+- real_timestamp_and_provenance_guarantee: producer_or_fold_builder_owned
+- anonymous_tensor_boundaries_alone_do_not_prove_no_leakage: true
+- fresh_model_per_fold: required
+- fit_on_oos: prohibited
+- same_fitted_model_for_train_oos_snapshot_comparison: required
+- default_seed_policy: fold
+- fold_seed_mode_requires_candidate_seed_none: true
+- unhealthy_oos_default: reject_candidate_with_finite_rejected_score
+- soft_health_penalty_requires_explicit_policy: true
+- cross_retrain_state_stability: required_before_claiming_market_regime_stability
+
+nautilus_path:
+- canonical_runtime_input: adapters.nautilus.TemporalObservationData
+- canonical_training_input_builder: not_yet_implemented
+- next_builder_contract: causally_admitted_TemporalObservationData -> chronological_model_ready_sequences -> WalkForwardFold
+- use_provenance_and_asof_timestamp_to_prove_causality: required
+- Bars|Trades|Quotes_feature_construction: nautilus_consumer_owned
+- interface_may_validate_and_preserve_admitted_contract_but_not_recompute_trading_features: true
+
+verification:
+- generic_evaluator_or_adapter_change: run_focused_tests_first
+- shared_generic_contract_change: run_all_non_nautilus_tests
+- nautilus_adapter_change: run_nautilus_tests_with_compatible_nautilus_dependency
+- missing_optional_framework_dependency: report_unverified_scope_explicitly
+- do_not_claim_full_suite_when_nautilus_tests_were_not_collected: true
+- docs_and_workflow_change: git_diff_check|required_link_or_path_check_when_material
+- probabilistic_or_core_semantic_change: belongs_in_awa_si_nhsmm_not_here
+
+completion:
+- require: requested_interface_behavior_verified|ownership_boundaries_preserved|remaining_unverified_framework_scope_stated
+- performance_or_market_quality_claim: requires_observed_evidence_not_interface_structure_alone

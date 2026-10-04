@@ -43,6 +43,20 @@ Current `awa-si/nautilus@main` publishes neutral causal `AxisObservation` values
 
 The collector does not import Nautilus consumer model classes, does not depend on the ML `FeatureSnapshot` path, and does not derive NHSMM features. A direct Axis→NHSMM feature mapping remains prohibited until an explicit versioned cross-repository contract is defined.
 
+A Nautilus replay can attach the collector through the runner's existing actor boundary:
+
+```python
+from adapters.nautilus import AxisObservationCollector
+from backtest import BacktestRunner
+
+collector = AxisObservationCollector(trigger_timeframes=("5m",))
+runner = BacktestRunner(..., actors=(collector,))
+runner.run()
+observations = collector.observations
+```
+
+No hook/callback infrastructure is required in the Nautilus consumer repository.
+
 ## Model input contract
 
 The current model-facing adapter input remains `TemporalObservationData`, schema `nautilus-temporal-observations-v1`.

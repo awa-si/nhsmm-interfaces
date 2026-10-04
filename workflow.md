@@ -46,12 +46,45 @@ evaluator_path:
 - cross_retrain_state_stability: required_before_claiming_market_regime_stability
 
 nautilus_path:
+- canonical_consumer_reference: awa-si/nautilus@main
 - canonical_runtime_input: adapters.nautilus.TemporalObservationData
-- canonical_training_input_builder: not_yet_implemented
-- next_builder_contract: causally_admitted_TemporalObservationData -> chronological_model_ready_sequences -> TemporalFold
-- use_provenance_and_asof_timestamp_to_prove_causality: required
+- current_nautilus_temporal_model_status: reserved_not_integrated
+- current_nautilus_market_observation_baseline: causal_raw_4tf_76_coordinates
+- current_nautilus_timeframes: 1h|15m|5m|1m
+- current_nautilus_decision_anchor: 5m
+- current_nautilus_provenance_owner: predictive.provenance.FeatureSnapshot
+- existing_temporal_observation_v1_status: frozen_18_coordinate_interface_contract_from_older_nautilus_research_state
+- raw_4tf_76_and_temporal_observation_v1_equivalence: prohibited
+- silent_76_to_18_mapping: prohibited
 - Bars|Trades|Quotes_feature_construction: nautilus_consumer_owned
+- current_raw_4tf_feature_construction_and_admission: nautilus_consumer_owned
 - interface_may_validate_and_preserve_admitted_contract_but_not_recompute_trading_features: true
+- any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
+
+nautilus_training_builder:
+- canonical_training_input_builder: next_implementation_target
+- input: sequence_of_already_admitted_TemporalObservationData
+- output: chronological_model_ready_sequences -> TemporalFold
+- feature_values: preserve_input_values_exactly_in_contract_order
+- feature_recomputation: prohibited
+- raw_4tf_conversion: prohibited_without_new_versioned_mapping_contract
+- homogeneous_observation_contract_per_build: required
+- homogeneous_instrument_per_sequence: required
+- asof_ts_ns: strictly_increasing
+- decision_sequence: strictly_increasing
+- duplicate_decision_identity: reject
+- provenance_available_ts_must_be_lte_asof: required
+- provenance_processed_sequence_must_be_lte_decision_sequence: required
+- trigger_provenance_when_present_must_match_decision_identity: required
+- chronological_split_boundaries: derive_from_admitted_observation_identity_not_anonymous_tensor_position_alone
+- train_oos_boundary: train_end_ns < oos_start_ns
+- multi_fold_boundaries: strictly_increasing
+- empty_train_or_oos: reject
+- cross_instrument_folding: prohibited
+- context_mapping: none_unless_explicit_versioned_contract_is_added
+- trading_labels_or_targets: prohibited
+- pnl|sharpe|risk|execution_objectives: prohibited
+- builder_must_not_claim_current_nautilus_production_integration_until_nautilus_emits_a_compatible_versioned_temporal_observation_contract: true
 
 verification:
 - generic_evaluator_or_adapter_change: run_focused_tests_first

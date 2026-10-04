@@ -6,11 +6,42 @@ __all__ = [
     "Observation",
     "StateEstimate",
     "NHSMMRuntimeAdapter",
+    "WalkForwardFold",
+    "NHSMMTuningScoreConfig",
+    "NHSMMTuningEvaluationReport",
+    "NHSMMTunerEvaluatorConfig",
+    "NHSMMTunerEvaluator",
+    "NHSMMFoldEvaluation",
     "StructuredEventAdapter",
 ]
 
 
 def __getattr__(name: str):
+    if name in {
+        "NHSMMFoldEvaluation",
+        "NHSMMTunerEvaluator",
+        "NHSMMTunerEvaluatorConfig",
+        "NHSMMTuningEvaluationReport",
+        "NHSMMTuningScoreConfig",
+        "WalkForwardFold",
+    }:
+        from .evaluation import (
+            NHSMMFoldEvaluation,
+            NHSMMTunerEvaluator,
+            NHSMMTunerEvaluatorConfig,
+            NHSMMTuningEvaluationReport,
+            NHSMMTuningScoreConfig,
+            WalkForwardFold,
+        )
+
+        return {
+            "NHSMMFoldEvaluation": NHSMMFoldEvaluation,
+            "NHSMMTunerEvaluator": NHSMMTunerEvaluator,
+            "NHSMMTunerEvaluatorConfig": NHSMMTunerEvaluatorConfig,
+            "NHSMMTuningEvaluationReport": NHSMMTuningEvaluationReport,
+            "NHSMMTuningScoreConfig": NHSMMTuningScoreConfig,
+            "WalkForwardFold": WalkForwardFold,
+        }[name]
     if name == "NHSMMRuntimeAdapter":
         from .nhsmm import NHSMMRuntimeAdapter
         return NHSMMRuntimeAdapter

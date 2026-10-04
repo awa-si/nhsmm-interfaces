@@ -9,14 +9,16 @@ This repository owns host/framework integration for NHSMM. It defines canonical 
 ```text
 external host / domain system
         |
-        v
-adapter
-        |
-        v
-Observation + optional Context
-        |
-        v
-NHSMMRuntimeAdapter
+        +-----------------------------+
+        |                             |
+        v                             v
+streaming adapter              walk-forward evaluator
+        |                             |
+        v                             v
+Observation + optional Context   validated NHSMM configs
+        |                             |
+        v                             v
+NHSMMRuntimeAdapter             fresh train -> OOS fits
         |
         v
 nhsmm.HSMMFilterRuntime
@@ -36,6 +38,7 @@ The core model, training, filtering, forecasting, and artifact semantics remain 
 from adapters import (
     Context,
     NHSMMRuntimeAdapter,
+    NHSMMTunerEvaluator,
     Observation,
     StructuredEventAdapter,
     StateEstimate,
@@ -50,6 +53,8 @@ from adapters import (
 - `StateEstimate` — most-probable latent state, state posterior, episode-age posterior, timestamp, and metadata.
 - `Adapter` — minimal runtime-neutral event adapter pipeline.
 - `NHSMMRuntimeAdapter` — adapter for the public `nhsmm.HSMMFilterRuntime`.
+- `NHSMMTunerEvaluator` — domain-neutral train→OOS walk-forward evaluator for core `ConfigTuner`.
+- `WalkForwardFold` — explicit temporal train/OOS split contract.
 - `StructuredEventAdapter` — schema-driven adapter for structured event mappings.
 
 ## Canonical streaming path
@@ -116,7 +121,8 @@ External projects should not own duplicate NHSMM integration code. They should p
 
 Does not belong here:
 
-- NHSMM model implementation or training;
+- NHSMM model/optimizer implementation;
+- trading-specific training objectives or model-selection policy;
 - trading strategy, execution, portfolio, or risk policy;
 - medical diagnosis, treatment recommendations, or autonomous eligibility decisions;
 - raw-document OCR/extraction pipelines;
@@ -144,6 +150,7 @@ Source layout follows `adapters/<adapter>/`. Wheel/distribution names are indepe
 adapters/
 ├── base.py          # Observation, Context, StateEstimate, Adapter
 ├── nhsmm.py         # NHSMMRuntimeAdapter
+├── evaluation.py    # walk-forward tuning evaluator
 ├── structured.py    # StructuredEventAdapter
 └── nautilus/
     ├── __init__.py
@@ -155,10 +162,12 @@ adapters/
     └── DEVELOPMENT.md
 
 docs/
-└── adapters.md   # detailed adapter usage and lifecycle rules
+├── adapters.md      # runtime adapter usage and lifecycle rules
+└── evaluation.md    # walk-forward tuning/evaluation contract
 
 tests/
 ├── test_adapter_base.py
+├── test_evaluation.py
 ├── test_nhsmm_adapter.py
 ├── test_nautilus_adapter.py
 └── test_structured_adapter.py
@@ -175,13 +184,14 @@ Current core expectations:
 - artifact loading through public `nhsmm` artifact/inference helpers;
 - context-effect validation remains core-owned and is not reimplemented here.
 
-`awa-si/nhsmm-interfaces` is the source of truth for host/framework mapping, adapter lifecycle, canonical `Observation`/`Context`/`StateEstimate` contracts, and framework-specific packages such as `adapters/nautilus/`.
+`awa-si/nhsmm-interfaces` is the source of truth for host/framework mapping, adapter lifecycle, canonical `Observation`/`Context`/`StateEstimate` contracts, walk-forward fit/evaluate orchestration over the public core API, and framework-specific packages such as `adapters/nautilus/`.
 
 The core package can be installed from its released `nhsmm` wheel. This repository is currently source-deployed; future adapter wheels may package individual integrations without moving their source directories.
 
 ## Documentation
 
 - [Adapter guide](docs/adapters.md) — architecture, contracts, lifecycle, framework patterns, and StructuredEventAdapter usage.
+- [Evaluation guide](docs/evaluation.md) — walk-forward folds, tuner evaluator, scoring, and boundaries.
 - [NautilusTrader adapter](adapters/nautilus/README.md) — adapter contract and scope.
 - [NautilusTrader development](adapters/nautilus/DEVELOPMENT.md) — implementation, deployment, hardening, and lifecycle notes.
 - [NHSMM core](https://github.com/awa-si/nhsmm) — model/runtime implementation and model-level documentation.

@@ -2,7 +2,7 @@
 
 This guide defines how `nhsmm-interfaces` owns and exposes integrations between external systems and NHSMM.
 
-The model/runtime contract is owned by `awa-si/nhsmm`. Adapters consume its public package API only; model internals, artifact semantics, filtering semantics, forecasts, and context-effect validation remain core-owned. The current core package requires Python 3.12+.
+The model/runtime/configuration contract is owned by `awa-si/nhsmm`. Interfaces consume its public package API only; model internals, optimizer implementation, artifact semantics, filtering semantics, forecasts, and model-level validation remain core-owned. The current core package requires Python 3.12+.
 
 ## 1. Layering
 
@@ -311,7 +311,8 @@ Appropriate:
 
 Not appropriate:
 
-- model training;
+- model/optimizer implementation;
+- trading-specific tuning objectives or model-selection policy;
 - modification of NHSMM posterior semantics;
 - trading decisions or execution policy;
 - portfolio/risk policy;
@@ -336,3 +337,27 @@ Repository examples:
 - `tests/test_adapter_base.py`;
 - `tests/test_nhsmm_adapter.py`;
 - `tests/test_structured_adapter.py`.
+
+
+## 11. Walk-forward evaluation boundary
+
+`NHSMMTunerEvaluator` is the domain-neutral fit/evaluate orchestration layer around the public core tuning/configuration API.
+
+It owns:
+
+- strict `train_end_ns < oos_start_ns` fold ordering evidence;
+- one fresh NHSMM fit per fold;
+- deterministic fold-level seed policy;
+- train/OOS validation snapshots from the public core API;
+- train→OOS comparison metrics;
+- aggregation into a scalar `TuneEvaluation` plus diagnostics.
+
+It does not own:
+
+- model or optimizer implementation;
+- market feature construction;
+- Nautilus/Freqtrade data extraction;
+- trading return/PnL objectives;
+- strategy, risk, portfolio, or execution decisions.
+
+See [evaluation.md](evaluation.md) for the complete contract.

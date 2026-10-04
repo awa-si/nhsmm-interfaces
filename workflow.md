@@ -59,6 +59,8 @@ nautilus_path:
 - Bars|Trades|Quotes_feature_construction: nautilus_consumer_owned
 - current_raw_4tf_feature_construction_and_admission: nautilus_consumer_owned
 - interface_may_validate_and_preserve_admitted_contract_but_not_recompute_trading_features: true
+- canonical_axis_to_temporal_mapping: adapters.nautilus.AxisTemporalMapper
+- canonical_axis_to_temporal_mapping_contract: axis-observation-v2-to-nautilus-temporal-observations-v1
 - any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
 
 axis_observation_collection:
@@ -72,7 +74,8 @@ axis_observation_collection:
 - per_instrument_asof_ts_ns: strictly_increasing
 - per_instrument_decision_sequence: strictly_increasing
 - collector_reset_clears_replay_state: required
-- direct_axis_to_temporal_observation_mapping: prohibited_until_explicit_versioned_contract_exists
+- direct_axis_to_temporal_observation_mapping: adapters.nautilus.AxisTemporalMapper
+- mapping_contract_identity_must_be_carried_in_TemporalObservationData: required
 - ml_feature_snapshot_dependency: prohibited
 
 nautilus_training_builder:
@@ -83,6 +86,7 @@ nautilus_training_builder:
 - feature_recomputation: prohibited
 - raw_4tf_conversion: prohibited_without_new_versioned_mapping_contract
 - homogeneous_observation_contract_per_build: required
+- homogeneous_mapping_contract_per_build: required
 - homogeneous_instrument_per_sequence: required
 - asof_ts_ns: strictly_increasing
 - decision_sequence: strictly_increasing

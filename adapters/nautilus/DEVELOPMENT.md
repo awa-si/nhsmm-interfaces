@@ -323,7 +323,7 @@ Committed Nautilus adapter tests currently cover:
 - invalid no-input actor configuration;
 - temporal training-fold construction and causal boundary validation.
 
-These are framework-hook tests. End-to-end tests with a real NHSMM artifact/runtime and Nautilus backtest/live engine remain production-hardening work.
+These are framework-hook tests. Real NHSMM model fitting and core validation have also been exercised against the mapped Nautilus dataset stream. A real artifact-loaded streaming `HSMMFilterRuntime` inside the Nautilus engine and live lifecycle integration remain production-hardening work.
 
 ## Remaining work
 
@@ -365,3 +365,33 @@ Measured on Python with `nautilus_trader==2.0.0rc5`, using the same admitted Axi
 - observed median reduction: ~19.4%.
 
 This is a mapper microbenchmark only; it is not a claim of equivalent end-to-end replay speedup. Collector validation semantics remain unchanged.
+
+
+## Real NHSMM validation evidence
+
+A bounded real-data validation was run from the canonical mounted BTCUSDT Nautilus catalog through the actual Axis 18-coordinate mapping and the public NHSMM validation API.
+
+Window and model:
+
+- replay window: `2025-01-01` through `2025-01-08`;
+- chronological split: `2025-01-06`;
+- admitted 5m observations: 1,356;
+- train: 780 observations;
+- OOS: 576 observations;
+- model: 3 states, 18 features, causal, max duration 12, K-Means emission initialization, one initialization, four optimization iterations;
+- validation: `evaluate_validation_snapshot` on train and OOS plus `compare_validation_snapshots`.
+
+Observed evidence:
+
+- train log-likelihood/timestep: -13.2757;
+- OOS log-likelihood/timestep: -13.4128;
+- train→OOS delta: -0.1370;
+- occupancy L1 drift: 0.00357;
+- train effective states: 2.9518;
+- OOS effective states: 2.9531;
+- OOS max occupancy: 0.3973;
+- OOS Viterbi states used: 2 of 3;
+- train and OOS health: healthy;
+- duration and transition degeneration flags: false.
+
+This verifies compatibility of the real Nautilus observation stream with NHSMM fitting and core validation. It is bounded validation evidence only. It does not establish optimal state count, regime usefulness, trading edge, artifact readiness, or live readiness.

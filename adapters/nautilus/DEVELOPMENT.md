@@ -82,15 +82,17 @@ NHSMMDataActorConfig(
 )
 ```
 
-At least one input path must be enabled.
+Exactly one input path must be enabled. A single stateful runtime must not mix temporal CustomData and Bar fallback events.
 
 `NHSMMDataActor` receives an injected public `HSMMFilterRuntime`. The application/bootstrap layer currently owns runtime construction and artifact loading.
 
 The actor:
 
-- subscribes/unsubscribes temporal CustomData;
-- optionally subscribes/unsubscribes Bars;
-- resets the runtime on `on_reset`;
+- subscribes/unsubscribes exactly one configured input path;
+- binds temporal runtime state to one instrument until reset;
+- rejects non-monotonic temporal decision identity;
+- resets both runtime and temporal stream identity on `on_reset`;
+- preserves temporal mapping identity in published state;
 - publishes state only after successful inference;
 - ignores unrelated CustomData types.
 

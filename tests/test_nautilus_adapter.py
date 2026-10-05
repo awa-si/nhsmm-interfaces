@@ -15,10 +15,12 @@ def _ensure_model_stubs():
         sys.modules["torch"] = torch
 
     try:
-        import nhsmm  # noqa: F401
+        import nhsmm
     except ModuleNotFoundError:
         nhsmm = types.ModuleType("nhsmm")
+        sys.modules["nhsmm"] = nhsmm
 
+    if not hasattr(nhsmm, "HSMMFilterRuntime"):
         class HSMMFilterRuntime:
             def __init__(self):
                 self.reset_calls = 0
@@ -27,7 +29,23 @@ def _ensure_model_stubs():
                 self.reset_calls += 1
 
         nhsmm.HSMMFilterRuntime = HSMMFilterRuntime
-        sys.modules["nhsmm"] = nhsmm
+
+    for name in (
+        "ModelConfig",
+        "ModelHealthThresholds",
+        "NHSMM",
+        "TuneEvaluation",
+        "ValidationComparison",
+        "ValidationSnapshot",
+    ):
+        if not hasattr(nhsmm, name):
+            setattr(nhsmm, name, type(name, (), {}))
+    for name in (
+        "compare_validation_snapshots",
+        "evaluate_validation_snapshot",
+    ):
+        if not hasattr(nhsmm, name):
+            setattr(nhsmm, name, lambda *args, **kwargs: None)
 
 
 _ensure_model_stubs()
@@ -222,7 +240,7 @@ def test_temporal_observation_rejects_future_provenance():
 
 
 def test_actor_config_rejects_no_input_path():
-    with pytest.raises(ValueError, match="must enable temporal input"):
+    with pytest.raises(ValueError, match="exactly one input path"):
         NHSMMDataActorConfig(
             consume_temporal_observations=False,
             bar_type=None,

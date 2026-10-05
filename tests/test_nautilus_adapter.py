@@ -593,3 +593,166 @@ def test_temporal_fold_builder_rejects_mixed_mapping_contracts():
             label="mixed-mapping",
             train_through_ns=100,
         )
+
+
+def test_actor_rejects_mixed_temporal_and_bar_input():
+    from nautilus_trader.model import BarType
+
+    bar_type = BarType.from_str("BTCUSDT-PERP.BINANCE-5-MINUTE-LAST-EXTERNAL")
+    with pytest.raises(ValueError, match="must not mix temporal and bar input"):
+        NHSMMDataActorConfig(bar_type=bar_type)
+
+
+def test_actor_rejects_multiple_temporal_instruments():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    actor.temporal_adapter.step = lambda event: StateEstimate(
+        state=0,
+        posterior=(1.0,),
+        age_posterior=(1.0,),
+        timestamp=event.asof_ts_ns,
+        metadata={
+            "instrument": event.instrument_id,
+            "observation_contract": event.contract,
+            "decision_sequence": event.decision_sequence,
+            "trigger_timeframe": event.trigger_timeframe,
+            "mapping_contract": event.mapping_contract,
+        },
+    )
+    actor.publish_data = lambda *args: None
+
+    first = TemporalObservationData(
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=100,
+        decision_sequence=1,
+        trigger_timeframe="5m",
+    )
+    second = TemporalObservationData(
+        instrument_id="ETHUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=200,
+        decision_sequence=2,
+        trigger_timeframe="5m",
+    )
+
+    actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, first))
+    with pytest.raises(ValueError, match="multiple instruments"):
+        actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, second))
+
+
+def test_actor_rejects_non_monotonic_temporal_identity():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    actor.temporal_adapter.step = lambda event: StateEstimate(
+        state=0,
+        posterior=(1.0,),
+        age_posterior=(1.0,),
+        timestamp=event.asof_ts_ns,
+        metadata={
+            "instrument": event.instrument_id,
+            "observation_contract": event.contract,
+            "decision_sequence": event.decision_sequence,
+            "trigger_timeframe": event.trigger_timeframe,
+            "mapping_contract": event.mapping_contract,
+        },
+    )
+    actor.publish_data = lambda *args: None
+
+    first = TemporalObservationData(
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=200,
+        decision_sequence=2,
+        trigger_timeframe="5m",
+    )
+    repeated = TemporalObservationData(
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=200,
+        decision_sequence=3,
+        trigger_timeframe="5m",
+    )
+
+    actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, first))
+    with pytest.raises(ValueError, match="strictly ordered"):
+        actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, repeated))
+
+
+def test_actor_reset_releases_temporal_stream_identity():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    actor.temporal_adapter.step = lambda event: StateEstimate(
+        state=0,
+        posterior=(1.0,),
+        age_posterior=(1.0,),
+        timestamp=event.asof_ts_ns,
+        metadata={
+            "instrument": event.instrument_id,
+            "observation_contract": event.contract,
+            "decision_sequence": event.decision_sequence,
+            "trigger_timeframe": event.trigger_timeframe,
+            "mapping_contract": event.mapping_contract,
+        },
+    )
+    actor.publish_data = lambda *args: None
+
+    first = TemporalObservationData(
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=200,
+        decision_sequence=2,
+        trigger_timeframe="5m",
+    )
+    second = TemporalObservationData(
+        instrument_id="ETHUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=100,
+        decision_sequence=1,
+        trigger_timeframe="5m",
+    )
+
+    actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, first))
+    actor.on_reset()
+    actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, second))
+    assert runtime.reset_calls == 1
+
+
+def test_actor_publishes_temporal_mapping_contract():
+    runtime = HSMMFilterRuntime()
+    actor = NHSMMDataActor(NHSMMDataActorConfig(), runtime)
+    payload = TemporalObservationData(
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        values=_temporal_values(),
+        asof_ts_ns=123,
+        decision_sequence=7,
+        trigger_timeframe="5m",
+        mapping_contract="axis-observation-v2-to-nautilus-temporal-observations-v1",
+    )
+    actor.temporal_adapter.step = lambda event: StateEstimate(
+        state=1,
+        posterior=(0.2, 0.8),
+        age_posterior=(1.0,),
+        timestamp=event.asof_ts_ns,
+        metadata={
+            "instrument": event.instrument_id,
+            "observation_contract": event.contract,
+            "decision_sequence": event.decision_sequence,
+            "trigger_timeframe": event.trigger_timeframe,
+            "mapping_contract": event.mapping_contract,
+        },
+    )
+    published = []
+    actor.publish_data = lambda data_type, data: published.append(data.data)
+
+    actor.on_data(CustomData(TEMPORAL_OBSERVATION_DATA_TYPE, payload))
+
+    assert published[0].mapping_contract == payload.mapping_contract
+
+
+def test_axis_temporal_mapping_fields_match_temporal_contract_names():
+    from adapters.nautilus import AXIS_TEMPORAL_MAPPING_FIELDS
+
+    assert tuple(
+        f"{timeframe}_{field}" for timeframe, field in AXIS_TEMPORAL_MAPPING_FIELDS
+    ) == TEMPORAL_OBSERVATION_NAMES

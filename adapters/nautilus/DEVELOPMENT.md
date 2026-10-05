@@ -350,3 +350,16 @@ Observed bounded replay evidence for `2025-01-01` through `2025-01-05`:
 - mapping identity remained `axis-observation-v2-to-nautilus-temporal-observations-v1`.
 
 This validates the native BacktestEngine/DataBus integration boundary. It does not by itself establish NHSMM model quality or live-trading readiness.
+
+
+## Axis temporal mapping hot-path optimization
+
+The versioned Axis→temporal contract is unchanged. The mapper caches the four timeframe states once, reads the fixed 18 primitive fields directly, and reuses resolved provenance objects instead of repeating mapping and attribute lookups.
+
+Measured on Python with `nautilus_trader==2.0.0rc5`, using the same admitted Axis payload for 50,000 mappings across seven samples:
+
+- prior median: 2.814 s;
+- optimized median: 2.267 s;
+- observed median reduction: ~19.4%.
+
+This is a mapper microbenchmark only; it is not a claim of equivalent end-to-end replay speedup. Collector validation semantics remain unchanged.

@@ -27,7 +27,7 @@ class TemporalAdapter(NHSMMRuntimeAdapter):
 
 def temporal_state_fields(
     state: StateEstimate,
-) -> tuple[str, int, int, str, str]:
+) -> tuple[str, int, int, str, str, str | None]:
     metadata = state.metadata
     try:
         instrument_id = str(metadata["instrument"])
@@ -35,8 +35,19 @@ def temporal_state_fields(
         decision_sequence = int(metadata["decision_sequence"])
         trigger_timeframe = str(metadata["trigger_timeframe"])
         observation_contract = str(metadata["observation_contract"])
+        raw_mapping_contract = metadata.get("mapping_contract")
+        mapping_contract = (
+            None if raw_mapping_contract is None else str(raw_mapping_contract)
+        )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("state estimate is missing temporal observation provenance") from exc
     if observation_contract != TEMPORAL_OBSERVATION_CONTRACT:
         raise ValueError("state estimate has incompatible temporal observation contract")
-    return instrument_id, ts_event, decision_sequence, trigger_timeframe, observation_contract
+    return (
+        instrument_id,
+        ts_event,
+        decision_sequence,
+        trigger_timeframe,
+        observation_contract,
+        mapping_contract,
+    )

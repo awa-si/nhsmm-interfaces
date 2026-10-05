@@ -113,6 +113,10 @@ The returned `TuneEvaluation.metrics` includes:
 - mean OOS log-likelihood per timestep;
 - mean positive train→OOS generalization gap;
 - mean state-occupancy L1 distance;
+- mean OOS effective-state count;
+- minimum OOS Viterbi states used;
+- mean absolute train→OOS state-switch-rate delta;
+- mean absolute train→OOS run-length delta;
 - healthy OOS fraction.
 
 ## Detailed evidence
@@ -131,7 +135,7 @@ WalkForwardReport
     └── ValidationComparison
 ```
 
-The report is dictionary/JSON-compatible through `as_dict()`.
+The report is dictionary/JSON-compatible through `as_dict()`. The additional state-usage and path-stability metrics are observational diagnostics; they do not alter the default tuning score.
 
 ## Boundaries
 

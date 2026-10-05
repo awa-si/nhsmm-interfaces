@@ -50,15 +50,17 @@ def _ensure_model_stubs():
         nhsmm = types.ModuleType("nhsmm")
         sys.modules["nhsmm"] = nhsmm
 
-    if not hasattr(nhsmm, "HSMMFilterRuntime"):
-        class HSMMFilterRuntime:
-            def __init__(self):
-                self.reset_calls = 0
+    class HSMMFilterRuntime:
+        def __init__(self):
+            self.reset_calls = 0
 
-            def reset(self):
-                self.reset_calls += 1
+        def reset(self):
+            self.reset_calls += 1
 
-        nhsmm.HSMMFilterRuntime = HSMMFilterRuntime
+    # Actor unit tests intentionally use a deterministic runtime double even
+    # when the optional real NHSMM package is installed. Walk-forward/core
+    # integration tests import the remaining real public API unchanged.
+    nhsmm.HSMMFilterRuntime = HSMMFilterRuntime
 
     for name in (
         "ModelConfig",

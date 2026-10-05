@@ -129,6 +129,7 @@ class NHSMMStateData:
     observation_contract: str | None = None
     decision_sequence: int | None = None
     trigger_timeframe: str | None = None
+    mapping_contract: str | None = None
     bar_type: str | None = None
 ```
 
@@ -148,13 +149,14 @@ Latent state IDs are opaque. No `BUY`, `SELL`, `BULL`, `BEAR`, sizing, execution
 
 Current actor behavior:
 
-- `on_start`: subscribe to temporal CustomData and optional Bar input;
+- exactly one input path per runtime: temporal CustomData or Bar fallback;
+- `on_start`: subscribe to the configured input path;
 - `on_stop`: unsubscribe;
-- `on_reset`: call `runtime.reset()`;
-- `on_data`: consume `TemporalObservationData` and publish `NHSMMStateData`;
-- `on_bar`: optional fallback path.
+- `on_reset`: reset runtime and temporal stream identity;
+- `on_data`: consume ordered `TemporalObservationData` and publish `NHSMMStateData`;
+- `on_bar`: consume only the configured Bar fallback stream.
 
-One mutable NHSMM runtime must receive one ordered callback sequence. Do not call `step()` concurrently on the same runtime or share one runtime across independent streams without an explicit batching design.
+One mutable NHSMM runtime owns one ordered instrument stream. Temporal input binds the actor to the first instrument until reset and rejects cross-instrument or non-monotonic decision delivery. `mapping_contract` is preserved into `NHSMMStateData` so downstream consumers can retain exact Axis→temporal provenance.
 
 ## Dependency boundary
 

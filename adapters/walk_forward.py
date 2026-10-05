@@ -157,6 +157,10 @@ class WalkForwardReport:
     mean_oos_log_likelihood_per_timestep: float
     mean_generalization_gap: float
     mean_occupancy_l1_distance: float
+    mean_oos_effective_states: float
+    min_oos_viterbi_states_used: int
+    mean_abs_state_switch_rate_delta: float
+    mean_abs_run_length_delta: float
     healthy_oos_fraction: float
     is_rejected: bool
     rejection_reasons: tuple[str, ...]
@@ -169,6 +173,10 @@ class WalkForwardReport:
                 "mean_oos_log_likelihood_per_timestep": self.mean_oos_log_likelihood_per_timestep,
                 "mean_generalization_gap": self.mean_generalization_gap,
                 "mean_occupancy_l1_distance": self.mean_occupancy_l1_distance,
+                "mean_oos_effective_states": self.mean_oos_effective_states,
+                "min_oos_viterbi_states_used": float(self.min_oos_viterbi_states_used),
+                "mean_abs_state_switch_rate_delta": self.mean_abs_state_switch_rate_delta,
+                "mean_abs_run_length_delta": self.mean_abs_run_length_delta,
                 "healthy_oos_fraction": self.healthy_oos_fraction,
                 "is_rejected": float(self.is_rejected),
             },
@@ -180,6 +188,10 @@ class WalkForwardReport:
             "mean_oos_log_likelihood_per_timestep": self.mean_oos_log_likelihood_per_timestep,
             "mean_generalization_gap": self.mean_generalization_gap,
             "mean_occupancy_l1_distance": self.mean_occupancy_l1_distance,
+            "mean_oos_effective_states": self.mean_oos_effective_states,
+            "min_oos_viterbi_states_used": self.min_oos_viterbi_states_used,
+            "mean_abs_state_switch_rate_delta": self.mean_abs_state_switch_rate_delta,
+            "mean_abs_run_length_delta": self.mean_abs_run_length_delta,
             "healthy_oos_fraction": self.healthy_oos_fraction,
             "is_rejected": self.is_rejected,
             "rejection_reasons": list(self.rejection_reasons),
@@ -303,6 +315,18 @@ class WalkForwardEvaluator:
         mean_occupancy_l1 = sum(
             fold.comparison.occupancy_l1_distance for fold in folds
         ) / count
+        mean_oos_effective_states = sum(
+            fold.oos.health.effective_states for fold in folds
+        ) / count
+        min_oos_viterbi_states_used = min(
+            fold.oos.health.viterbi_states_used for fold in folds
+        )
+        mean_abs_state_switch_rate_delta = sum(
+            abs(fold.comparison.state_switch_rate_delta) for fold in folds
+        ) / count
+        mean_abs_run_length_delta = sum(
+            abs(fold.comparison.mean_run_length_delta) for fold in folds
+        ) / count
         healthy_fraction = sum(float(fold.oos.health.healthy) for fold in folds) / count
 
         unhealthy_folds = tuple(fold.label for fold in folds if not fold.oos.health.healthy)
@@ -332,6 +356,10 @@ class WalkForwardEvaluator:
             mean_oos_log_likelihood_per_timestep=float(mean_oos_ll),
             mean_generalization_gap=float(mean_gap),
             mean_occupancy_l1_distance=float(mean_occupancy_l1),
+            mean_oos_effective_states=float(mean_oos_effective_states),
+            min_oos_viterbi_states_used=int(min_oos_viterbi_states_used),
+            mean_abs_state_switch_rate_delta=float(mean_abs_state_switch_rate_delta),
+            mean_abs_run_length_delta=float(mean_abs_run_length_delta),
             healthy_oos_fraction=float(healthy_fraction),
             is_rejected=is_rejected,
             rejection_reasons=rejection_reasons,

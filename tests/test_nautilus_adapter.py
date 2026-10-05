@@ -21,7 +21,7 @@ def _ensure_model_stubs():
     if not hasattr(torch, "as_tensor"):
         torch.as_tensor = lambda *args, **kwargs: None
     if not hasattr(torch, "tensor"):
-        class _FakeTensor:
+        class _FakeTensor(torch.Tensor):
             def __init__(self, values, dtype=None):
                 self._values = values
                 self.dtype = dtype
@@ -29,14 +29,20 @@ def _ensure_model_stubs():
                     len(values),
                     len(values[0]) if values else 0,
                 )
+                self.ndim = 2
 
             def __getitem__(self, index):
                 row = self._values[index]
                 return types.SimpleNamespace(tolist=lambda: list(row))
 
+            def is_floating_point(self):
+                return True
+
         torch.tensor = lambda values, dtype=None: _FakeTensor(values, dtype=dtype)
     if not hasattr(torch, "argmax"):
         torch.argmax = lambda *args, **kwargs: None
+    if not hasattr(torch, "isfinite"):
+        torch.isfinite = lambda value: types.SimpleNamespace(all=lambda: True)
 
     try:
         import nhsmm

@@ -334,3 +334,19 @@ These are framework-hook tests. End-to-end tests with a real NHSMM artifact/runt
 7. Add CustomData persistence/catalog serialization only if a consumer needs it.
 
 Do not add trading decisions to the adapter or actor. Do not recreate Nautilus↔NHSMM integration code in downstream trading repositories.
+
+
+## Native replay verification
+
+The current Axis→temporal bridge has been verified against the canonical mounted Nautilus BTCUSDT catalog using `nautilus_trader==2.0.0rc5` and the real `HistoricalBacktestRunner` DataBus path.
+
+Observed bounded replay evidence for `2025-01-01` through `2025-01-05`:
+
+- external `AxisTemporalDataActor` registered through `BacktestRunner.actors`;
+- real `AxisObservation v2` CustomData consumed from the Nautilus strategy;
+- 492 ordered 5m temporal observations published;
+- decision sequence increased from 4241 to 7390;
+- every published payload carried 18 values;
+- mapping identity remained `axis-observation-v2-to-nautilus-temporal-observations-v1`.
+
+This validates the native BacktestEngine/DataBus integration boundary. It does not by itself establish NHSMM model quality or live-trading readiness.

@@ -88,6 +88,16 @@ axis_observation_collection:
 - mapping_contract_identity_must_be_carried_in_TemporalObservationData: required
 - ml_feature_snapshot_dependency: prohibited
 
+nautilus_runtime_actor:
+- one_runtime_one_input_path: required
+- temporal_and_bar_input_mixing: prohibited
+- temporal_runtime_instrument_binding: first_instrument_until_reset
+- cross_instrument_temporal_delivery: reject
+- temporal_asof_ts_ns: strictly_increasing
+- temporal_decision_sequence: strictly_increasing
+- reset_releases_temporal_stream_identity: required
+- mapping_contract_propagation_to_NHSMMStateData: required
+
 nautilus_training_builder:
 - canonical_training_input_builder: adapters.nautilus.TemporalFoldBuilder
 - input: sequence_of_already_admitted_TemporalObservationData

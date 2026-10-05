@@ -133,19 +133,17 @@ class AxisObservationCollector(DataActor):
         if data.data_type != AXIS_OBSERVATION_DATA_TYPE:
             return
         observation = data.data
-        trigger_timeframe = getattr(observation, "trigger_timeframe", None)
-        if trigger_timeframe not in self.trigger_timeframes:
+        identity = validate_axis_observation(observation)
+        if observation.trigger_timeframe not in self.trigger_timeframes:
             return
-        instrument_id = getattr(observation, "instrument_id", None)
-        if self.instrument_id is not None and instrument_id != self.instrument_id:
+        if self.instrument_id is not None and observation.instrument_id != self.instrument_id:
             return
 
-        identity = validate_axis_observation(observation)
-        previous = self._last_identity_by_instrument.get(instrument_id)
+        previous = self._last_identity_by_instrument.get(observation.instrument_id)
         if previous is not None and (
             identity[0] <= previous[0] or identity[1] <= previous[1]
         ):
             raise ValueError("axis observations must be strictly ordered per instrument")
-        self._last_identity_by_instrument[instrument_id] = identity
+        self._last_identity_by_instrument[observation.instrument_id] = identity
         self._observations.append(observation)
 

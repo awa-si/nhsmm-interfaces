@@ -7,7 +7,11 @@ from nautilus_trader.model import CustomData
 
 from .actor import TEMPORAL_OBSERVATION_DATA_TYPE
 from .axis import AXIS_OBSERVATION_DATA_TYPE, validate_axis_observation
-from .contracts import TemporalObservationData, TimeframeProvenance
+from .contracts import (
+    TEMPORAL_OBSERVATION_NAMES,
+    TemporalObservationData,
+    TimeframeProvenance,
+)
 
 
 AXIS_TEMPORAL_MAPPING_CONTRACT = "axis-observation-v2-to-nautilus-temporal-observations-v1"

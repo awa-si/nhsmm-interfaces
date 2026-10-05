@@ -46,22 +46,43 @@ class AxisTemporalMapper:
         if self.mapping_contract != AXIS_TEMPORAL_MAPPING_CONTRACT:
             raise ValueError("unsupported Axis temporal mapping contract")
 
-        values = []
-        for timeframe, field in AXIS_TEMPORAL_MAPPING_FIELDS:
-            state = observation.axis_by_tf[timeframe]
-            if not hasattr(state, field):
-                raise TypeError(
-                    f"Axis state {timeframe!r} is missing mapped field {field!r}"
-                )
-            values.append(float(getattr(state, field)))
+        axis = observation.axis_by_tf
+        try:
+            h1 = axis["1h"]
+            m15 = axis["15m"]
+            m5 = axis["5m"]
+            m1 = axis["1m"]
+            values = (
+                float(h1.direction),
+                float(h1.efficiency),
+                float(h1.persistence),
+                float(h1.volatility),
+                float(h1.compression),
+                float(h1.activity),
+                float(m15.direction),
+                float(m15.efficiency),
+                float(m15.persistence),
+                float(m15.volatility),
+                float(m15.compression),
+                float(m15.activity),
+                float(m15.participation),
+                float(m15.flow),
+                float(m5.direction),
+                float(m5.volatility_accel),
+                float(m5.activity_accel),
+                float(m1.shock),
+            )
+        except (AttributeError, KeyError) as exc:
+            raise TypeError("Axis observation is missing a mapped temporal field") from exc
 
+        provenance_by_tf = observation.provenance_by_tf
         provenance = tuple(
-            self._provenance(timeframe, observation)
+            self._provenance(timeframe, provenance_by_tf[timeframe], observation.asof_ts_ns)
             for timeframe in ("1h", "15m", "5m", "1m")
         )
         return TemporalObservationData(
             instrument_id=str(observation.instrument_id),
-            values=tuple(values),
+            values=values,
             asof_ts_ns=int(observation.asof_ts_ns),
             decision_sequence=int(observation.decision_sequence),
             trigger_timeframe="5m",
@@ -70,20 +91,25 @@ class AxisTemporalMapper:
         )
 
     @staticmethod
-    def _provenance(timeframe: str, observation: object) -> TimeframeProvenance:
-        source = observation.provenance_by_tf[timeframe]
-        available = max(int(source.source_ts_event_ns), int(source.source_ts_init_ns))
+    def _provenance(
+        timeframe: str,
+        source: object,
+        asof_ts_ns: int,
+    ) -> TimeframeProvenance:
+        source_ts_event_ns = int(source.source_ts_event_ns)
+        source_ts_init_ns = int(source.source_ts_init_ns)
+        available = max(source_ts_event_ns, source_ts_init_ns)
         return TimeframeProvenance(
             timeframe=timeframe,
-            source_ts_event_ns=int(source.source_ts_event_ns),
-            source_ts_init_ns=int(source.source_ts_init_ns),
+            source_ts_event_ns=source_ts_event_ns,
+            source_ts_init_ns=source_ts_init_ns,
             processed_sequence=int(source.processed_sequence),
             timeframe_bar_count=(
                 None
                 if not hasattr(source, "timeframe_bar_count")
                 else source.timeframe_bar_count
             ),
-            age_ns=int(observation.asof_ts_ns) - available,
+            age_ns=int(asof_ts_ns) - available,
         )
 
 

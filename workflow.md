@@ -64,6 +64,15 @@ nautilus_path:
 - canonical_axis_to_temporal_mapping_contract: axis-observation-v2-to-nautilus-temporal-observations-v1
 - any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
 
+native_databus_replay_verified:
+- runtime: nautilus_trader==2.0.0rc5
+- dataset: canonical_mounted_nautilus_BTCUSDT_catalog
+- bounded_window: 2025-01-01_to_2025-01-05
+- axis_to_temporal_actor_path: verified
+- published_temporal_observations: 492
+- mapping_contract_preserved: axis-observation-v2-to-nautilus-temporal-observations-v1
+- model_quality_or_live_readiness_claim: prohibited
+
 axis_observation_collection:
 - canonical_consumer: adapters.nautilus.AxisObservationCollector
 - source_schema: axis-observation-v2

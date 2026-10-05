@@ -44,6 +44,9 @@ evaluator_path:
 - unhealthy_oos_default: reject_candidate_with_finite_rejection_score
 - soft_health_penalty_requires_explicit_policy: true
 - cross_retrain_state_stability: required_before_claiming_market_regime_stability
+- report_oos_effective_states: required
+- report_min_oos_viterbi_states_used: required
+- report_state_switch_and_run_length_drift: required
 
 nautilus_path:
 - canonical_consumer_reference: awa-si/nautilus@main
@@ -63,6 +66,24 @@ nautilus_path:
 - canonical_axis_to_temporal_mapping: adapters.nautilus.AxisTemporalMapper
 - canonical_axis_to_temporal_mapping_contract: axis-observation-v2-to-nautilus-temporal-observations-v1
 - any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
+
+real_nautilus_nhsmm_validation:
+- runtime_core: awa-si/nhsmm@develop
+- dataset: canonical_mounted_nautilus_BTCUSDT_catalog
+- bounded_window: 2025-01-01_to_2025-01-08
+- chronological_split: 2025-01-06
+- mapped_observations: 1356
+- train_observations: 780
+- oos_observations: 576
+- train_health: healthy
+- oos_health: healthy
+- oos_log_likelihood_per_timestep: -13.41276380750868
+- train_to_oos_log_likelihood_delta: -0.13703889765291066
+- occupancy_l1_distance: 0.0035678446292877197
+- oos_effective_states: 2.9530932903289795
+- oos_viterbi_states_used: 2
+- model_quality_or_trading_edge_claim: prohibited
+- optimal_state_count_claim: prohibited
 
 native_databus_replay_verified:
 - runtime: nautilus_trader==2.0.0rc5

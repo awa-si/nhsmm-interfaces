@@ -79,6 +79,10 @@ def test_evaluator_produces_reproducible_fold_evidence() -> None:
     assert all(fold.train.model_fingerprint == fold.oos.model_fingerprint for fold in first.folds)
     assert all(fold.train.data_fingerprint != fold.oos.data_fingerprint for fold in first.folds)
     assert 0.0 <= first.healthy_oos_fraction <= 1.0
+    assert first.mean_oos_effective_states > 0.0
+    assert first.min_oos_viterbi_states_used >= 1
+    assert first.mean_abs_state_switch_rate_delta >= 0.0
+    assert first.mean_abs_run_length_delta >= 0.0
     assert torch.isfinite(torch.tensor(first.score))
     json.dumps(first.as_dict(), sort_keys=True)
 
@@ -94,6 +98,10 @@ def test_evaluator_is_direct_config_tuner_callback() -> None:
     assert len(report.trials) == 2
     assert report.best.evaluation.metrics["folds"] == 1.0
     assert "healthy_oos_fraction" in report.best.evaluation.metrics
+    assert "mean_oos_effective_states" in report.best.evaluation.metrics
+    assert "min_oos_viterbi_states_used" in report.best.evaluation.metrics
+    assert "mean_abs_state_switch_rate_delta" in report.best.evaluation.metrics
+    assert "mean_abs_run_length_delta" in report.best.evaluation.metrics
 
 
 def test_evaluator_rejects_validation_config_candidates() -> None:

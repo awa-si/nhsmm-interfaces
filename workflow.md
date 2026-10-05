@@ -67,6 +67,29 @@ nautilus_path:
 - canonical_axis_to_temporal_mapping_contract: axis-observation-v2-to-nautilus-temporal-observations-v1
 - any_new_nautilus_to_temporal_observation_mapping: explicit_versioned_cross_repository_contract_required
 
+nautilus_state_count_validation:
+- candidate_states_compared: 2|3|4
+- two_state_status: rejected_unhealthy
+- higher_budget_candidates: 3|4
+- seeds: 1000|1001|1002
+- max_iter: 8
+- folds: 2
+- current_research_baseline_n_states: 3
+- three_state_healthy_oos_fraction: 1.0
+- four_state_healthy_oos_fraction: 0.6666666666666666
+- baseline_scope: nautilus_BTCUSDT_research_only
+- change_nhsmm_core_default: prohibited_from_this_evidence
+
+nhsmm_cpu_profile:
+- representative_train_observations: 1356
+- representative_oos_observations: 1152
+- dominant_cost: pytorch_autograd_backward
+- backward_share_of_profiled_wall_time: approximately_78_percent
+- workspace_vcpus: 4
+- measured_best_torch_threads_for_probe: 2
+- hardcode_global_torch_thread_count: prohibited
+- treat_thread_result_as_environment_specific: required
+
 real_nautilus_nhsmm_validation:
 - runtime_core: awa-si/nhsmm@develop
 - dataset: canonical_mounted_nautilus_BTCUSDT_catalog

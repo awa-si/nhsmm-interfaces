@@ -6,13 +6,37 @@ import pytest
 
 def _ensure_model_stubs():
     try:
-        import torch  # noqa: F401
+        import torch
     except ModuleNotFoundError:
         torch = types.ModuleType("torch")
-        torch.float32 = object()
-        torch.as_tensor = lambda *args, **kwargs: None
-        torch.argmax = lambda *args, **kwargs: None
         sys.modules["torch"] = torch
+
+    if not hasattr(torch, "Tensor"):
+        class Tensor:
+            pass
+
+        torch.Tensor = Tensor
+    if not hasattr(torch, "float32"):
+        torch.float32 = object()
+    if not hasattr(torch, "as_tensor"):
+        torch.as_tensor = lambda *args, **kwargs: None
+    if not hasattr(torch, "tensor"):
+        class _FakeTensor:
+            def __init__(self, values, dtype=None):
+                self._values = values
+                self.dtype = dtype
+                self.shape = (
+                    len(values),
+                    len(values[0]) if values else 0,
+                )
+
+            def __getitem__(self, index):
+                row = self._values[index]
+                return types.SimpleNamespace(tolist=lambda: list(row))
+
+        torch.tensor = lambda values, dtype=None: _FakeTensor(values, dtype=dtype)
+    if not hasattr(torch, "argmax"):
+        torch.argmax = lambda *args, **kwargs: None
 
     try:
         import nhsmm

@@ -395,3 +395,47 @@ Observed evidence:
 - duration and transition degeneration flags: false.
 
 This verifies compatibility of the real Nautilus observation stream with NHSMM fitting and core validation. It is bounded validation evidence only. It does not establish optimal state count, regime usefulness, trading edge, artifact readiness, or live readiness.
+
+
+## NHSMM profiling and state-count baseline
+
+A real-data CPU profile was run on the mapped Nautilus BTCUSDT 18-feature stream with the current public `awa-si/nhsmm@develop` core.
+
+Representative 3-state profile:
+
+- 1,356 train observations and 1,152 OOS observations;
+- 8 optimization iterations;
+- total fit + validation wall time: 63.43 s under the initial thread configuration;
+- `NHSMM.optimize`: 57.44 s cumulative;
+- autograd backward: 49.23 s cumulative, about 78% of total profiled wall time;
+- train/OOS snapshot validation: 5.91 s cumulative;
+- causal hazard forward path: 4.71 s cumulative;
+- filtering/Viterbi/health diagnostics are secondary relative to backward.
+
+This indicates that the dominant runtime cost is PyTorch autograd in model fitting rather than Nautilus mapping or Python adapter orchestration.
+
+On the 4-vCPU workspace, a controlled 2-iteration thread probe measured:
+
+- 1 Torch thread: 4.03 s;
+- 2 Torch threads: 2.56 s;
+- 4 Torch threads: 3.41 s.
+
+Two Torch threads were therefore used for the higher-budget comparison. This is environment-specific profiling evidence and must not be hard-coded as a global NHSMM runtime default.
+
+### 3 vs 4 state multi-seed comparison
+
+Using identical two-fold walk-forward boundaries, 3 seeds (`1000,1001,1002`), `max_iter=8`, K-Means emission initialization, one initialization, and 2 Torch threads:
+
+| metric | 3 states | 4 states |
+| --- | ---: | ---: |
+| validation score | -13.1157 | -14.7913 |
+| mean OOS LL/timestep | -13.0749 | -13.0803 |
+| mean train→OOS gap | 0.0518 | 0.0507 |
+| mean occupancy L1 drift | 0.0558 | 0.0634 |
+| mean effective states | 2.7933 | 3.8302 |
+| min OOS Viterbi states | 2 | 1 |
+| mean switch-rate delta | 0.00152 | 0.00222 |
+| mean run-length delta | 39.53 | 144.78 |
+| healthy OOS fraction | 1.00 | 0.667 |
+
+The current Nautilus research baseline is therefore `n_states=3`. This is a host/dataset validation decision, not a change to the NHSMM package default or a general claim that three states are universally optimal.

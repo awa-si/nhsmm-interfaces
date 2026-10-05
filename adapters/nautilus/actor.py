@@ -43,6 +43,7 @@ class NHSMMStateData:
     observation_contract: str | None = None
     decision_sequence: int | None = None
     trigger_timeframe: str | None = None
+    mapping_contract: str | None = None
     bar_type: str | None = None
 
 
@@ -66,7 +67,9 @@ class NHSMMDataActorConfig(DataActorConfig):
         if self.bar_type is not None and not self.feature_fields:
             raise ValueError("feature_fields must not be empty when bar input is enabled")
         if self.bar_type is None and not self.consume_temporal_observations:
-            raise ValueError("actor must enable temporal input or a bar fallback input")
+            raise ValueError("actor must enable exactly one input path")
+        if self.bar_type is not None and self.consume_temporal_observations:
+            raise ValueError("actor must not mix temporal and bar input in one runtime")
 
 
 class NHSMMDataActor(DataActor):
@@ -89,6 +92,8 @@ class NHSMMDataActor(DataActor):
         runtime: HSMMFilterRuntime,
     ) -> None:
         self.runtime = runtime
+        self._temporal_instrument_id: str | None = None
+        self._last_temporal_identity: tuple[int, int] | None = None
         self.temporal_adapter = TemporalAdapter(runtime)
         self.bar_adapter = (
             None
@@ -110,6 +115,8 @@ class NHSMMDataActor(DataActor):
 
     def on_reset(self) -> None:
         self.runtime.reset()
+        self._temporal_instrument_id = None
+        self._last_temporal_identity = None
 
     def on_data(self, data: CustomData) -> None:
         if data.data_type != TEMPORAL_OBSERVATION_DATA_TYPE:
@@ -117,10 +124,26 @@ class NHSMMDataActor(DataActor):
         payload = data.data
         if not isinstance(payload, TemporalObservationData):
             raise TypeError("temporal CustomData payload must be TemporalObservationData")
+        self._admit_temporal(payload)
         estimate = self.temporal_adapter.step(payload)
         if not isinstance(estimate, StateEstimate):
             raise TypeError("TemporalAdapter must return StateEstimate")
         self._publish_state(self._temporal_state_data(estimate))
+
+    def _admit_temporal(self, payload: TemporalObservationData) -> None:
+        instrument_id = payload.instrument_id
+        if self._temporal_instrument_id is None:
+            self._temporal_instrument_id = instrument_id
+        elif instrument_id != self._temporal_instrument_id:
+            raise ValueError("one NHSMM runtime cannot consume multiple instruments")
+
+        identity = (payload.asof_ts_ns, payload.decision_sequence)
+        previous = self._last_temporal_identity
+        if previous is not None and (
+            identity[0] <= previous[0] or identity[1] <= previous[1]
+        ):
+            raise ValueError("temporal observations must be strictly ordered")
+        self._last_temporal_identity = identity
 
     def on_bar(self, bar: Bar) -> None:
         if self.config.bar_type is None or bar.bar_type != self.config.bar_type:
@@ -144,6 +167,7 @@ class NHSMMDataActor(DataActor):
             decision_sequence,
             trigger_timeframe,
             observation_contract,
+            mapping_contract,
         ) = temporal_state_fields(state)
         return NHSMMStateData(
             instrument_id=instrument_id,
@@ -159,6 +183,7 @@ class NHSMMDataActor(DataActor):
             observation_contract=observation_contract,
             decision_sequence=decision_sequence,
             trigger_timeframe=trigger_timeframe,
+            mapping_contract=mapping_contract,
         )
 
     @staticmethod

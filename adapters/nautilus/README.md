@@ -184,5 +184,6 @@ Production stabilization still needs:
 - optional forecast publication;
 - persistence/catalog serialization if required;
 - multi-stream runtime ownership;
-- native BacktestEngine/DataBus replay integration test;
 - live lifecycle integration tests.
+
+Native BacktestEngine/DataBus replay is verified on `nautilus_trader==2.0.0rc5` against the mounted canonical BTCUSDT catalog (`2025-01-01` through `2025-01-05` test window): `AxisTemporalDataActor` consumed real `AxisObservation` CustomData and published 492 ordered `TemporalObservationData` events with the 18-coordinate mapping contract preserved.

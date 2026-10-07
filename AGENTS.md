@@ -22,7 +22,8 @@ source_resolution:
 - walk_forward_contracts: docs/walk-forward.md
 - nhsmm_core_owner: awa-si/nhsmm@develop
 - nautilus_host_owner: awa-si/nautilus@main
-- nautilus_adapter_owner: adapters/nautilus/
+- nautilus_adapter_owner: awa-si/nautilus@main/adapters/nhsmm
+- local_nautilus_adapter_snapshot: adapters/nautilus/|reference_only
 
 ownership:
 - own: host_facing_contracts|runtime_adapters|framework_mappings|walk_forward_orchestration

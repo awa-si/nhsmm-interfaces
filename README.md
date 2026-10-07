@@ -18,7 +18,7 @@ This repository owns the boundary between the public NHSMM core API and external
 
 - canonical host-facing contracts;
 - runtime adapters and lifecycle wiring;
-- framework-specific mappings;
+- framework-specific mappings except integrations explicitly migrated to their host repository;
 - walk-forward fit/evaluate orchestration over the public core API.
 
 Downstream applications own:
@@ -109,7 +109,7 @@ tests/
 
 ## NautilusTrader
 
-The canonical Nautilus integration lives under `adapters/nautilus/`.
+The canonical Nautilus integration has moved to `awa-si/nautilus@main/adapters/nhsmm`. The retained `adapters/nautilus/` tree is migration/reference history and is not the active contract owner.
 
 ```text
 AxisObservation (CustomData)

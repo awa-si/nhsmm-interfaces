@@ -174,7 +174,7 @@ Rules:
 - do not switch between internal and external context after the first step without reset;
 - ensure feature and context dimensions match the model.
 
-Framework adapters in this repository own lifecycle wiring for their host framework, but must not redefine NHSMM runtime semantics.
+Framework adapters owned here wire host lifecycle without redefining NHSMM runtime semantics. The Nautilus adapter is an explicit exception: its active owner is now `awa-si/nautilus@main/adapters/nhsmm`; this repository retains the former implementation only as migration/reference history.
 
 ## 6. Internal vs external context
 
@@ -264,7 +264,7 @@ When `context_fields=()`, `to_context()` returns `None` and the NHSMM runtime us
 
 ### Nautilus Trader
 
-Nautilus-specific documentation now lives with the adapter under `adapters/nautilus/`.
+The active Nautilus-specific adapter and documentation now live in `awa-si/nautilus@main/adapters/nhsmm`. The paths below are retained migration/reference material.
 
 - [`adapters/nautilus/README.md`](../adapters/nautilus/README.md) — adapter contract and scope;
 - [`adapters/nautilus/DEVELOPMENT.md`](../adapters/nautilus/DEVELOPMENT.md) — current implementation, lifecycle, deployment, and hardening notes.

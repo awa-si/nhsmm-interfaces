@@ -1,8 +1,10 @@
 # NHSMM Interfaces
 
-Integration, runtime-adapter, and walk-forward evaluation layer for [awa-si/nhsmm](https://github.com/awa-si/nhsmm).
+> **Deprecated:** this repository is no longer an active development or integration owner. It remains public as a reference implementation and historical contract record for the public [awa-si/nhsmm](https://github.com/awa-si/nhsmm) API.
 
-This repository owns the boundary between the public NHSMM core API and external hosts/frameworks. It does not reimplement model internals or downstream decision policy.
+The retained code documents earlier runtime-adapter, host-integration, and walk-forward patterns around NHSMM. Active integrations should be developed in their current owning repositories; for NautilusTrader, the active adapter is `awa-si/nautilus@main/adapters/nhsmm`.
+
+This repository must not be treated as the current source of truth when a maintained owner exists elsewhere.
 
 ## Ownership
 
@@ -14,12 +16,14 @@ This repository owns the boundary between the public NHSMM core API and external
 - filtering and forecasting;
 - model-health and validation snapshots.
 
-`awa-si/nhsmm-interfaces` owns:
+`awa-si/nhsmm-interfaces` retains, for public reference:
 
-- canonical host-facing contracts;
-- runtime adapters and lifecycle wiring;
-- framework-specific mappings except integrations explicitly migrated to their host repository;
-- walk-forward fit/evaluate orchestration over the public core API.
+- historical host-facing contracts;
+- runtime-adapter and lifecycle patterns;
+- framework mapping examples;
+- walk-forward fit/evaluate orchestration examples over the public core API.
+
+These retained interfaces are not automatically authoritative for current downstream integrations.
 
 Downstream applications own:
 
@@ -147,7 +151,9 @@ Current core expectations:
 
 ## Status
 
-The interface layer is under active development. Contracts may change until explicitly documented as stable.
+**Deprecated / reference-only.** No new integration ownership should be assigned to this repository. It remains public so NHSMM users and maintainers can inspect prior adapter contracts, implementation patterns, migration history, and walk-forward reference code.
+
+Current NHSMM model semantics remain owned by `awa-si/nhsmm`. Active host integrations belong to their explicitly documented current owner.
 
 ## License
 

@@ -5,6 +5,13 @@ repository: awa-si/nhsmm-interfaces
 branch: dev
 mode: normative_machine_directives
 
+repository_status:
+- deprecated: true
+- development_mode: reference_only
+- public_reference_for: nhsmm_interfaces|historical_adapter_contracts|walk_forward_patterns
+- new_feature_development: prohibited
+- bugfix_or_doc_change: only_when_needed_to_preserve_reference_correctness_or_migration_clarity
+
 control_plane:
 - inherit: awa-si/admin/instructions.txt|awa-si/admin/workflow.md|awa-si/admin/coding.md_when_applicable
 - repository_layer_position: after_applicable_admin_layers
@@ -26,7 +33,8 @@ source_resolution:
 - local_nautilus_adapter_snapshot: adapters/nautilus/|reference_only
 
 ownership:
-- own: host_facing_contracts|runtime_adapters|framework_mappings|walk_forward_orchestration
+- own: retained_reference_history_only
+- active_integration_ownership: resolve_to_current_host_repository_or_explicit_owner
 - do_not_own: nhsmm_model_internals|downstream_domain_policy|trading_signals|portfolio_risk|execution_logic
 - import_or_mirror_nhsmm_internals: prohibited
 

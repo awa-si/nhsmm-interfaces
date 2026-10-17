@@ -17,8 +17,8 @@ workspace:
 
 ownership:
 - nhsmm_core: model|optimizer|config|artifact|inference|filtering|forecasting|health|validation|tuning_primitives
-- nhsmm_interfaces: host_mapping|adapter_lifecycle|walk_forward_orchestration|framework_integration
-- nautilus_consumer: feature_production|feature_admission|strategy|portfolio|risk|execution
+- nhsmm_interfaces: retained_reference_history_only
+- nautilus_consumer: active_nautilus_integration|feature_production|feature_admission|strategy|portfolio|risk|execution
 - private_core_imports_or_semantic_duplication: prohibited
 
 change_flow:
@@ -91,7 +91,7 @@ nhsmm_cpu_profile:
 - treat_thread_result_as_environment_specific: required
 
 real_nautilus_nhsmm_validation:
-- runtime_core: awa-si/nhsmm@develop
+- runtime_core: awa-si/nhsmm@v3
 - dataset: canonical_mounted_nautilus_BTCUSDT_catalog
 - bounded_window: 2025-01-01_to_2025-01-08
 - chronological_split: 2025-01-06
@@ -174,7 +174,7 @@ verification:
 - generic_evaluator_or_adapter_change: run_focused_tests_first
 - shared_generic_contract_change: run_all_non_nautilus_tests
 - nautilus_adapter_change: run_nautilus_tests_with_compatible_nautilus_dependency
-- missing_optional_framework_dependency: report_unverified_scope_explicitly
+- missing_optional_framework_dependency: install_declared_dependency_and_rerun_when_allowed_by_global_workflow_else_report_actual_blocker
 - do_not_claim_full_suite_when_nautilus_tests_were_not_collected: true
 - docs_and_workflow_change: git_diff_check|required_link_or_path_check_when_material
 - probabilistic_or_core_semantic_change: belongs_in_awa_si_nhsmm_not_here

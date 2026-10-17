@@ -1,16 +1,16 @@
 # NautilusTrader adapter
 
-> Status: **reference snapshot; active owner moved to `awa-si/nautilus@main/adapters/nhsmm`**.
+> Status: **reference snapshot; active owner moved to `awa-si/nautilus@main/adapter/nhsmm`**.
 
-This directory is retained as migration/reference history for the NautilusTrader↔NHSMM integration. The active implementation and contract owner is `awa-si/nautilus@main/adapters/nhsmm`.
+This directory is retained as migration/reference history for the NautilusTrader↔NHSMM integration. The active implementation and contract owner is `awa-si/nautilus@main/adapter/nhsmm`.
 
 ## Ownership
 
-- `awa-si/nautilus@main/adapters/nhsmm` owns the active Nautilus↔NHSMM runtime integration.
+- `awa-si/nautilus@main/adapter/nhsmm` owns the active Nautilus↔NHSMM runtime integration.
 - `nhsmm-interfaces/adapters/nautilus` is reference-only and must not be evolved independently.
 - `awa-si/nhsmm` owns NHSMM model/runtime semantics and has no Nautilus dependency.
 - `awa-si/nautilus` owns configuration, feature production, strategy policy, execution, and risk.
-- Future Nautilus integration changes belong in `awa-si/nautilus@main/adapters/nhsmm`.
+- Future Nautilus integration changes belong in `awa-si/nautilus@main/adapter/nhsmm`.
 
 ## Architecture
 

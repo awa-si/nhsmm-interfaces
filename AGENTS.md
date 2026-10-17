@@ -27,9 +27,9 @@ source_resolution:
 - repository_workflow_owner: workflow.md
 - adapter_contracts: docs/adapters.md
 - walk_forward_contracts: docs/walk-forward.md
-- nhsmm_core_owner: awa-si/nhsmm@develop
+- nhsmm_core_owner: awa-si/nhsmm@v3
 - nautilus_host_owner: awa-si/nautilus@main
-- nautilus_adapter_owner: awa-si/nautilus@main/adapters/nhsmm
+- nautilus_adapter_owner: awa-si/nautilus@main/adapter/nhsmm
 - local_nautilus_adapter_snapshot: adapters/nautilus/|reference_only
 
 ownership:

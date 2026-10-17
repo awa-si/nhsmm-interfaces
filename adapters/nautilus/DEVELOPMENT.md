@@ -1,6 +1,6 @@
 # NautilusTrader adapter development
 
-> Status: **integration implemented**. Temporal CustomData input, DataActor runtime ownership, structured state publication, lifecycle reset, and committed framework-hook tests exist. Remaining work is production hardening rather than initial design.
+> Status: **deprecated reference snapshot**. The active Nautilus↔NHSMM integration is owned by `awa-si/nautilus@main/adapter/nhsmm`; this document describes retained historical implementation/evidence only.
 
 ## Canonical sources
 
@@ -55,7 +55,7 @@ The current Nautilus→NHSMM producer path is explicit: `AxisObservation v2` map
 
 ## Input ownership
 
-`awa-si/nautilus@main` owns and publishes `AxisObservation v2`. `nhsmm-interfaces` owns the explicit Axis→temporal mapping and the downstream temporal/NHSMM lifecycle.
+`awa-si/nautilus@main` owns the active Nautilus integration, including the current Axis→NHSMM mapping/lifecycle. This repository retains a reference snapshot of the earlier mapping and lifecycle.
 
 The transferred `nautilus-temporal-observations-v1` contract contains the reusable, policy-free data required at the adapter boundary:
 
@@ -178,7 +178,7 @@ Any context mapping must be explicit, deterministic, and part of the model/inter
 
 ## Deployment / consumer integration
 
-The adapter is currently deployed from source; this repository does not yet define a standalone Python package manifest for the Nautilus wheel. A consumer such as `awa-si/nautilus` should make the repository root available on `PYTHONPATH` during source-based development and install the compatible public `nhsmm` package (Python 3.12+), PyTorch, and the latest available NautilusTrader v2 pre-release in that environment.
+The adapter is currently deployed from source; this repository does not yet define a standalone Python package manifest for the Nautilus wheel. This repository is not an active deployment source for `awa-si/nautilus`. Consumers should use their current owning integration; the source/PYTHONPATH instructions below are retained only for reproducing this historical snapshot.
 
 This source/PYTHONPATH deployment is transitional. The source remains under `adapters/nautilus/`; a later release workflow can package that source as the `nhsmm-nautilus` wheel without changing the repository layout or Python import path.
 
@@ -211,7 +211,7 @@ Until packaging is added, the consumer must expose this repository directly:
 export PYTHONPATH="/path/to/nhsmm-interfaces:$PYTHONPATH"
 ```
 
-Do not copy the Nautilus adapter implementation into the consumer repository.
+Do not use this deprecated snapshot as the source for new Nautilus integration work; use the active owner in `awa-si/nautilus@main/adapter/nhsmm`.
 
 ### 3. Build/load the NHSMM runtime in bootstrap code
 
@@ -399,7 +399,7 @@ This verifies compatibility of the real Nautilus observation stream with NHSMM f
 
 ## NHSMM profiling and state-count baseline
 
-A real-data CPU profile was run on the mapped Nautilus BTCUSDT 18-feature stream with the current public `awa-si/nhsmm@develop` core.
+A real-data CPU profile was run on the mapped Nautilus BTCUSDT 18-feature stream with the current public `awa-si/nhsmm@v3` core.
 
 Representative 3-state profile:
 

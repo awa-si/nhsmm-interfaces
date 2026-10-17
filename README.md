@@ -2,7 +2,7 @@
 
 > **Deprecated:** this repository is no longer an active development or integration owner. It remains public as a reference implementation and historical contract record for the public [awa-si/nhsmm](https://github.com/awa-si/nhsmm) API.
 
-The retained code documents earlier runtime-adapter, host-integration, and walk-forward patterns around NHSMM. Active integrations should be developed in their current owning repositories; for NautilusTrader, the active adapter is `awa-si/nautilus@main/adapters/nhsmm`.
+The retained code documents earlier runtime-adapter, host-integration, and walk-forward patterns around NHSMM. Active integrations should be developed in their current owning repositories; for NautilusTrader, the active adapter is `awa-si/nautilus@main/adapter/nhsmm`.
 
 This repository must not be treated as the current source of truth when a maintained owner exists elsewhere.
 
@@ -113,7 +113,7 @@ tests/
 
 ## NautilusTrader
 
-The canonical Nautilus integration has moved to `awa-si/nautilus@main/adapters/nhsmm`. The retained `adapters/nautilus/` tree is migration/reference history and is not the active contract owner.
+The canonical Nautilus integration has moved to `awa-si/nautilus@main/adapter/nhsmm`. The retained `adapters/nautilus/` tree is migration/reference history and is not the active contract owner.
 
 ```text
 AxisObservation (CustomData)
